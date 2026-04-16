@@ -34,6 +34,12 @@ export const Route = createRootRoute({
       { name: "author", content: "Nicer" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { title: "Lovable App" },
+      { property: "og:title", content: "Lovable App" },
+      { name: "twitter:title", content: "Lovable App" },
+      { name: "description", content: "Instant Connect is a no-signup messaging app for real-time chat and direct messages." },
+      { property: "og:description", content: "Instant Connect is a no-signup messaging app for real-time chat and direct messages." },
+      { name: "twitter:description", content: "Instant Connect is a no-signup messaging app for real-time chat and direct messages." },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
