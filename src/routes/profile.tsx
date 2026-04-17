@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, Pencil, Copy, Check, Sparkles } from "lucide-react";
+import { ArrowLeft, Pencil, Copy, Check, RefreshCw, Info, ChevronRight, Heart } from "lucide-react";
 import { MobileFrame } from "@/components/MobileFrame";
 import { StatusBar } from "@/components/StatusBar";
 import { Avatar } from "@/components/Avatar";
@@ -82,7 +82,7 @@ function ProfilePage() {
           <button onClick={reroll} className="relative group">
             <Avatar src={me.avatar_url} name={me.username} size={120} ring />
             <div className="absolute inset-0 rounded-full bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
-              <Sparkles className="size-6 text-white" />
+              <RefreshCw className="size-6 text-white" />
             </div>
           </button>
           <p className="text-xs text-muted-foreground mt-2">Tap avatar to reroll</p>
@@ -122,11 +122,25 @@ function ProfilePage() {
             </p>
           </div>
 
+          <Link
+            to="/about"
+            className="bg-card/60 border border-border/60 rounded-2xl p-4 flex items-center gap-3 hover:bg-card/80 transition-colors"
+          >
+            <div className="size-10 rounded-xl bg-gradient-primary/20 flex items-center justify-center">
+              <Info className="size-5 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="font-semibold text-sm">About Nicer Chat</div>
+              <p className="text-xs text-muted-foreground truncate">Meet the developer behind the app</p>
+            </div>
+            <ChevronRight className="size-4 text-muted-foreground" />
+          </Link>
+
           <div className="bg-card/60 border border-border/60 rounded-2xl p-4">
-            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">About Nicer Chat</div>
-            <p className="text-sm text-foreground/80 leading-relaxed">
-              Nicer Chat is a free, open-source, no-account instant messaging experience built by Highness Chinedu. Open Nicer Chat in another tab or device to create a second user, then start a chat from the home screen.
-            </p>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Heart className="size-3.5 text-primary" />
+              <span>Free &amp; open source · Built by Highness Chinedu</span>
+            </div>
           </div>
         </div>
       </div>

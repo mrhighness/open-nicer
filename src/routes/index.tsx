@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Search, MoreVertical, Camera, Pin, MessageCircle, Phone, Sparkles, CircleDot, User } from "lucide-react";
+import { Search, MoreVertical, Camera, Pin, MessageCircle, Phone, Plus, MessageSquarePlus, CircleDot, User, Bot } from "lucide-react";
 import { MobileFrame } from "@/components/MobileFrame";
 import { StatusBar } from "@/components/StatusBar";
 import { Avatar } from "@/components/Avatar";
@@ -129,7 +129,7 @@ function ChatListPage() {
         className="absolute right-5 bottom-24 size-14 rounded-2xl bg-gradient-primary shadow-fab flex items-center justify-center text-primary-foreground hover:scale-105 active:scale-95 transition-transform"
         aria-label="New chat"
       >
-        <Sparkles className="size-6" />
+        <Plus className="size-7" strokeWidth={2.5} />
       </Link>
 
       {/* Bottom nav */}
@@ -185,11 +185,11 @@ function EmptyState() {
   return (
     <div className="px-6 py-16 text-center">
       <div className="mx-auto size-20 rounded-3xl bg-gradient-primary/20 flex items-center justify-center mb-4">
-        <Sparkles className="size-9 text-primary" />
+        <MessageSquarePlus className="size-9 text-primary" />
       </div>
       <h3 className="font-semibold text-lg">No chats yet</h3>
       <p className="text-sm text-muted-foreground mt-1 max-w-[260px] mx-auto">
-        Tap the sparkle button to start a new conversation with anyone on Nicer Chat.
+        Tap the + button to start a new conversation with anyone on Nicer Chat.
       </p>
     </div>
   );
@@ -199,7 +199,7 @@ function BottomNav({ active }: { active: "chats" | "calls" | "ai" | "status" | "
   const items = [
     { key: "chats" as const, label: "Chats", icon: MessageCircle, to: "/" },
     { key: "calls" as const, label: "Calls", icon: Phone, to: "/" },
-    { key: "ai" as const, label: "AI", icon: Sparkles, to: "/" },
+    { key: "ai" as const, label: "AI", icon: Bot, to: "/" },
     { key: "status" as const, label: "Status", icon: CircleDot, to: "/" },
     { key: "profile" as const, label: "Profile", icon: User, to: "/profile" },
   ];

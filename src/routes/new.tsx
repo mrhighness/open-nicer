@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Search, Sparkles } from "lucide-react";
+import { ArrowLeft, Search, Users } from "lucide-react";
 import { MobileFrame } from "@/components/MobileFrame";
 import { StatusBar } from "@/components/StatusBar";
 import { Avatar } from "@/components/Avatar";
@@ -81,7 +81,7 @@ function NewChatPage() {
         ) : filtered.length === 0 ? (
           <div className="px-6 py-16 text-center">
             <div className="mx-auto size-16 rounded-3xl bg-gradient-primary/20 flex items-center justify-center mb-3">
-              <Sparkles className="size-7 text-primary" />
+              <Users className="size-7 text-primary" />
             </div>
             <h3 className="font-semibold">No one here yet</h3>
             <p className="text-sm text-muted-foreground mt-1 max-w-[260px] mx-auto">
