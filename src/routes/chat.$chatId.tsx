@@ -422,40 +422,63 @@ function ChatPage() {
 
         {/* Composer */}
         <div className="px-3 pt-2 pb-4 flex items-end gap-2">
-          <div className="flex-1 flex items-end gap-1 bg-card border border-border/60 rounded-3xl pr-2 pl-3 py-1.5">
-            <button className="size-9 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground shrink-0">
-              <Smile className="size-5" />
-            </button>
-            <textarea
-              ref={inputRef}
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              onKeyDown={handleKey}
-              placeholder="Message..."
-              rows={1}
-              className="flex-1 bg-transparent border-none outline-none resize-none text-[15px] py-2 max-h-32 placeholder:text-muted-foreground"
+          {recording ? (
+            <VoiceRecorder
+              onCancel={() => setRecording(false)}
+              onSend={handleVoiceSend}
             />
+          ) : (
+            <div className="flex-1 flex items-end gap-1 bg-card border border-border/60 rounded-3xl pr-2 pl-3 py-1.5">
+              <button className="size-9 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground shrink-0">
+                <Smile className="size-5" />
+              </button>
+              <textarea
+                ref={inputRef}
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                onKeyDown={handleKey}
+                placeholder="Message..."
+                rows={1}
+                className="flex-1 bg-transparent border-none outline-none resize-none text-[15px] py-2 max-h-32 placeholder:text-muted-foreground"
+              />
+              <button
+                onClick={() => setAttachOpen(true)}
+                className="size-9 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground shrink-0"
+                aria-label="Attach file"
+              >
+                <Paperclip className="size-5" />
+              </button>
+              <button className="size-9 rounded-full flex items-center justify-center text-primary shrink-0" aria-label="AI assistant">
+                <Bot className="size-5" />
+              </button>
+            </div>
+          )}
+          {!recording && (
             <button
-              onClick={() => setAttachOpen(true)}
-              className="size-9 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground shrink-0"
+              onClick={() => {
+                if (text.trim()) handleSend();
+                else setRecording(true);
+              }}
+              disabled={sending}
+              className="size-12 rounded-full bg-gradient-primary shadow-fab flex items-center justify-center text-primary-foreground active:scale-95 transition-transform disabled:opacity-60"
+              aria-label={text.trim() ? "Send" : "Record voice"}
             >
-              <Paperclip className="size-5" />
+              {text.trim() ? <Send className="size-5" /> : <Mic className="size-5" />}
             </button>
-            <button className="size-9 rounded-full flex items-center justify-center text-primary shrink-0">
-              <Bot className="size-5" />
-            </button>
-          </div>
-          <button
-            onClick={text.trim() ? handleSend : undefined}
-            disabled={sending}
-            className="size-12 rounded-full bg-gradient-primary shadow-fab flex items-center justify-center text-primary-foreground active:scale-95 transition-transform disabled:opacity-60"
-            aria-label={text.trim() ? "Send" : "Record"}
-          >
-            {text.trim() ? <Send className="size-5" /> : <Mic className="size-5" />}
-          </button>
+          )}
         </div>
 
-        <AttachmentSheet open={attachOpen} onClose={() => setAttachOpen(false)} />
+        {uploadingCount > 0 && (
+          <div className="absolute top-20 left-1/2 -translate-x-1/2 bg-popover/95 backdrop-blur border border-border rounded-full px-3 py-1 text-xs text-muted-foreground shadow-lg z-30">
+            Uploading {uploadingCount} file{uploadingCount > 1 ? "s" : ""}…
+          </div>
+        )}
+
+        <AttachmentSheet
+          open={attachOpen}
+          onClose={() => setAttachOpen(false)}
+          onPick={(files) => handleFiles(files)}
+        />
       </motion.div>
     </MobileFrame>
   );
