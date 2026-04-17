@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { Mic, X, Send, Pause } from "lucide-react";
+import { Mic, X, Send } from "lucide-react";
 import { formatDuration, LIMITS } from "@/lib/uploads";
 import { toast } from "sonner";
 
