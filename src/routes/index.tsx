@@ -14,9 +14,9 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Nicer — Instant messaging, no sign-up" },
+      { title: "Nicer Chat — Instant messaging, no sign-up" },
       { name: "description", content: "A beautiful, instant messaging experience. No accounts, just chat." },
-      { property: "og:title", content: "Nicer — Instant messaging, no sign-up" },
+      { property: "og:title", content: "Nicer Chat — Instant messaging, no sign-up" },
       { property: "og:description", content: "A beautiful, instant messaging experience. No accounts, just chat." },
     ],
   }),
@@ -65,7 +65,7 @@ function ChatListPage() {
           </div>
           <div>
             <h1 className="text-2xl font-bold tracking-tight font-display">
-              Nicer <span className="bg-gradient-to-r from-primary-glow to-primary bg-clip-text text-transparent">App</span>
+              Nicer <span className="bg-gradient-to-r from-primary-glow to-primary bg-clip-text text-transparent">Chat</span>
             </h1>
           </div>
         </div>
@@ -189,7 +189,7 @@ function EmptyState() {
       </div>
       <h3 className="font-semibold text-lg">No chats yet</h3>
       <p className="text-sm text-muted-foreground mt-1 max-w-[260px] mx-auto">
-        Tap the sparkle button to start a new conversation with anyone on Nicer.
+        Tap the sparkle button to start a new conversation with anyone on Nicer Chat.
       </p>
     </div>
   );

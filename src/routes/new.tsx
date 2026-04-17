@@ -13,8 +13,8 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/new")({
   head: () => ({
     meta: [
-      { title: "New chat — Nicer" },
-      { name: "description", content: "Start a new conversation on Nicer." },
+      { title: "New chat — Nicer Chat" },
+      { name: "description", content: "Start a new conversation on Nicer Chat." },
     ],
   }),
   component: NewChatPage,
@@ -85,7 +85,7 @@ function NewChatPage() {
             </div>
             <h3 className="font-semibold">No one here yet</h3>
             <p className="text-sm text-muted-foreground mt-1 max-w-[260px] mx-auto">
-              Open Nicer in another browser or device to create a second user, then come back to start chatting.
+              Open Nicer Chat in another browser or device to create a second user, then come back to start chatting.
             </p>
           </div>
         ) : (
