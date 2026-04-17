@@ -6,11 +6,12 @@ import { MobileFrame } from "@/components/MobileFrame";
 import { Avatar } from "@/components/Avatar";
 import { MessageBubble } from "@/components/MessageBubble";
 import { AttachmentSheet } from "@/components/AttachmentSheet";
+import { VoiceRecorder } from "@/components/VoiceRecorder";
 import { useMe } from "@/lib/use-me";
 import { supabase } from "@/integrations/supabase/client";
 import { deleteMessage, getProfile, loadMessages, loadReactionsForMessages, sendMessage, toggleReaction } from "@/lib/chats";
+import { checkSize, detectKind, getAudioDuration, uploadAttachment } from "@/lib/uploads";
 import type { Message, Profile, Reaction } from "@/lib/types";
-import { cn } from "@/lib/utils";
 import { formatDateDivider, shouldShowDateDivider } from "@/lib/format";
 import { toast } from "sonner";
 
@@ -52,6 +53,8 @@ function ChatPage() {
   const [replyTo, setReplyTo] = useState<Message | null>(null);
   const [attachOpen, setAttachOpen] = useState(false);
   const [sending, setSending] = useState(false);
+  const [recording, setRecording] = useState(false);
+  const [uploadingCount, setUploadingCount] = useState(0);
   const scrollerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -156,6 +159,11 @@ function ChatPage() {
       reply_to: replySnapshot?.id ?? null,
       is_deleted: false,
       created_at: new Date().toISOString(),
+      attachment_url: null,
+      attachment_type: null,
+      attachment_name: null,
+      attachment_size: null,
+      attachment_duration: null,
     };
     setMessages((prev) => [...prev, optimistic]);
     try {
@@ -168,6 +176,103 @@ function ChatPage() {
       setText(content);
     } finally {
       setSending(false);
+    }
+  };
+
+  const handleFiles = async (files: FileList) => {
+    if (!me) return;
+    for (const file of Array.from(files)) {
+      const kind = detectKind(file);
+      const sizeError = checkSize(file, kind);
+      if (sizeError) {
+        toast.error(`${file.name}: ${sizeError}`);
+        continue;
+      }
+      const tmpId = `tmp-${Date.now()}-${Math.random()}`;
+      const optimistic: Message = {
+        id: tmpId,
+        chat_id: chatId,
+        sender_id: me.id,
+        content: "",
+        reply_to: null,
+        is_deleted: false,
+        created_at: new Date().toISOString(),
+        attachment_url: URL.createObjectURL(file),
+        attachment_type: file.type || "application/octet-stream",
+        attachment_name: file.name,
+        attachment_size: file.size,
+        attachment_duration: null,
+      };
+      setMessages((prev) => [...prev, optimistic]);
+      setUploadingCount((c) => c + 1);
+      try {
+        const { url } = await uploadAttachment(file, {
+          chatId,
+          senderId: me.id,
+          filename: file.name,
+          kind,
+        });
+        const real = await sendMessage({
+          chat_id: chatId,
+          sender_id: me.id,
+          content: "",
+          attachment_url: url,
+          attachment_type: file.type || "application/octet-stream",
+          attachment_name: file.name,
+          attachment_size: file.size,
+        });
+        setMessages((prev) => prev.map((m) => (m.id === tmpId ? real : m)));
+      } catch (e) {
+        console.error(e);
+        toast.error(`Failed to send ${file.name}`);
+        setMessages((prev) => prev.filter((m) => m.id !== tmpId));
+      } finally {
+        setUploadingCount((c) => c - 1);
+      }
+    }
+  };
+
+  const handleVoiceSend = async (blob: Blob, durationSec: number) => {
+    if (!me) return;
+    setRecording(false);
+    const finalDur = durationSec || (await getAudioDuration(blob));
+    const tmpId = `tmp-${Date.now()}`;
+    const filename = `voice-${Date.now()}.webm`;
+    const optimistic: Message = {
+      id: tmpId,
+      chat_id: chatId,
+      sender_id: me.id,
+      content: "",
+      reply_to: null,
+      is_deleted: false,
+      created_at: new Date().toISOString(),
+      attachment_url: URL.createObjectURL(blob),
+      attachment_type: blob.type || "audio/webm",
+      attachment_name: filename,
+      attachment_size: blob.size,
+      attachment_duration: finalDur,
+    };
+    setMessages((prev) => [...prev, optimistic]);
+    setUploadingCount((c) => c + 1);
+    try {
+      const { url } = await uploadAttachment(blob, { chatId, senderId: me.id, filename, kind: "audio" });
+      const real = await sendMessage({
+        chat_id: chatId,
+        sender_id: me.id,
+        content: "",
+        attachment_url: url,
+        attachment_type: blob.type || "audio/webm",
+        attachment_name: filename,
+        attachment_size: blob.size,
+        attachment_duration: finalDur,
+      });
+      setMessages((prev) => prev.map((m) => (m.id === tmpId ? real : m)));
+    } catch (e) {
+      console.error(e);
+      toast.error("Failed to send voice note");
+      setMessages((prev) => prev.filter((m) => m.id !== tmpId));
+    } finally {
+      setUploadingCount((c) => c - 1);
     }
   };
 
