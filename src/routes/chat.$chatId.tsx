@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Phone, Video, MoreVertical, Smile, Paperclip, Sparkles, Mic, Send, Lock, X, Reply } from "lucide-react";
+import { ArrowLeft, Phone, Video, MoreVertical, Smile, Paperclip, BadgeCheck, Bot, Mic, Send, Lock, X, Reply } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MobileFrame } from "@/components/MobileFrame";
 import { Avatar } from "@/components/Avatar";
@@ -223,7 +223,7 @@ function ChatPage() {
                   <Avatar src={other.avatar_url} name={other.username} size={40} online={other.is_online} />
                   <div className="min-w-0">
                     <div className="font-semibold truncate flex items-center gap-1">
-                      {other.username} <Sparkles className="size-3.5 text-primary" />
+                      {other.username} <BadgeCheck className="size-3.5 text-primary" />
                     </div>
                     <div className="text-[11px] text-muted-foreground truncate">
                       {other.is_online ? "Online" : "Last seen recently"}
@@ -337,7 +337,7 @@ function ChatPage() {
               <Paperclip className="size-5" />
             </button>
             <button className="size-9 rounded-full flex items-center justify-center text-primary shrink-0">
-              <Sparkles className="size-5" />
+              <Bot className="size-5" />
             </button>
           </div>
           <button
