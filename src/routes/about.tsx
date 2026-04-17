@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, Heart, Code2, Globe, Crown, Mail, Github, Sparkle, Lock, Zap } from "lucide-react";
+import { ArrowLeft, Heart, Code2, Globe, Crown, Github, Sparkle, Lock, Zap } from "lucide-react";
 import { MobileFrame } from "@/components/MobileFrame";
 import { StatusBar } from "@/components/StatusBar";
 

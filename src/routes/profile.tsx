@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, Pencil, Copy, Check, RefreshCw, Info, ChevronRight, Github, Heart } from "lucide-react";
+import { ArrowLeft, Pencil, Copy, Check, RefreshCw, Info, ChevronRight, Heart } from "lucide-react";
 import { MobileFrame } from "@/components/MobileFrame";
 import { StatusBar } from "@/components/StatusBar";
 import { Avatar } from "@/components/Avatar";
