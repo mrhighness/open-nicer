@@ -79,6 +79,11 @@ export async function sendMessage(input: {
   sender_id: string;
   content: string;
   reply_to?: string | null;
+  attachment_url?: string | null;
+  attachment_type?: string | null;
+  attachment_name?: string | null;
+  attachment_size?: number | null;
+  attachment_duration?: number | null;
 }) {
   const { data, error } = await supabase
     .from("messages")
@@ -87,6 +92,11 @@ export async function sendMessage(input: {
       sender_id: input.sender_id,
       content: input.content,
       reply_to: input.reply_to ?? null,
+      attachment_url: input.attachment_url ?? null,
+      attachment_type: input.attachment_type ?? null,
+      attachment_name: input.attachment_name ?? null,
+      attachment_size: input.attachment_size ?? null,
+      attachment_duration: input.attachment_duration ?? null,
     })
     .select()
     .single();

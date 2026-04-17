@@ -6,11 +6,12 @@ import { MobileFrame } from "@/components/MobileFrame";
 import { Avatar } from "@/components/Avatar";
 import { MessageBubble } from "@/components/MessageBubble";
 import { AttachmentSheet } from "@/components/AttachmentSheet";
+import { VoiceRecorder } from "@/components/VoiceRecorder";
 import { useMe } from "@/lib/use-me";
 import { supabase } from "@/integrations/supabase/client";
 import { deleteMessage, getProfile, loadMessages, loadReactionsForMessages, sendMessage, toggleReaction } from "@/lib/chats";
+import { checkSize, detectKind, getAudioDuration, uploadAttachment } from "@/lib/uploads";
 import type { Message, Profile, Reaction } from "@/lib/types";
-import { cn } from "@/lib/utils";
 import { formatDateDivider, shouldShowDateDivider } from "@/lib/format";
 import { toast } from "sonner";
 
@@ -52,6 +53,8 @@ function ChatPage() {
   const [replyTo, setReplyTo] = useState<Message | null>(null);
   const [attachOpen, setAttachOpen] = useState(false);
   const [sending, setSending] = useState(false);
+  const [recording, setRecording] = useState(false);
+  const [uploadingCount, setUploadingCount] = useState(0);
   const scrollerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -156,6 +159,11 @@ function ChatPage() {
       reply_to: replySnapshot?.id ?? null,
       is_deleted: false,
       created_at: new Date().toISOString(),
+      attachment_url: null,
+      attachment_type: null,
+      attachment_name: null,
+      attachment_size: null,
+      attachment_duration: null,
     };
     setMessages((prev) => [...prev, optimistic]);
     try {
@@ -168,6 +176,103 @@ function ChatPage() {
       setText(content);
     } finally {
       setSending(false);
+    }
+  };
+
+  const handleFiles = async (files: FileList) => {
+    if (!me) return;
+    for (const file of Array.from(files)) {
+      const kind = detectKind(file);
+      const sizeError = checkSize(file, kind);
+      if (sizeError) {
+        toast.error(`${file.name}: ${sizeError}`);
+        continue;
+      }
+      const tmpId = `tmp-${Date.now()}-${Math.random()}`;
+      const optimistic: Message = {
+        id: tmpId,
+        chat_id: chatId,
+        sender_id: me.id,
+        content: "",
+        reply_to: null,
+        is_deleted: false,
+        created_at: new Date().toISOString(),
+        attachment_url: URL.createObjectURL(file),
+        attachment_type: file.type || "application/octet-stream",
+        attachment_name: file.name,
+        attachment_size: file.size,
+        attachment_duration: null,
+      };
+      setMessages((prev) => [...prev, optimistic]);
+      setUploadingCount((c) => c + 1);
+      try {
+        const { url } = await uploadAttachment(file, {
+          chatId,
+          senderId: me.id,
+          filename: file.name,
+          kind,
+        });
+        const real = await sendMessage({
+          chat_id: chatId,
+          sender_id: me.id,
+          content: "",
+          attachment_url: url,
+          attachment_type: file.type || "application/octet-stream",
+          attachment_name: file.name,
+          attachment_size: file.size,
+        });
+        setMessages((prev) => prev.map((m) => (m.id === tmpId ? real : m)));
+      } catch (e) {
+        console.error(e);
+        toast.error(`Failed to send ${file.name}`);
+        setMessages((prev) => prev.filter((m) => m.id !== tmpId));
+      } finally {
+        setUploadingCount((c) => c - 1);
+      }
+    }
+  };
+
+  const handleVoiceSend = async (blob: Blob, durationSec: number) => {
+    if (!me) return;
+    setRecording(false);
+    const finalDur = durationSec || (await getAudioDuration(blob));
+    const tmpId = `tmp-${Date.now()}`;
+    const filename = `voice-${Date.now()}.webm`;
+    const optimistic: Message = {
+      id: tmpId,
+      chat_id: chatId,
+      sender_id: me.id,
+      content: "",
+      reply_to: null,
+      is_deleted: false,
+      created_at: new Date().toISOString(),
+      attachment_url: URL.createObjectURL(blob),
+      attachment_type: blob.type || "audio/webm",
+      attachment_name: filename,
+      attachment_size: blob.size,
+      attachment_duration: finalDur,
+    };
+    setMessages((prev) => [...prev, optimistic]);
+    setUploadingCount((c) => c + 1);
+    try {
+      const { url } = await uploadAttachment(blob, { chatId, senderId: me.id, filename, kind: "audio" });
+      const real = await sendMessage({
+        chat_id: chatId,
+        sender_id: me.id,
+        content: "",
+        attachment_url: url,
+        attachment_type: blob.type || "audio/webm",
+        attachment_name: filename,
+        attachment_size: blob.size,
+        attachment_duration: finalDur,
+      });
+      setMessages((prev) => prev.map((m) => (m.id === tmpId ? real : m)));
+    } catch (e) {
+      console.error(e);
+      toast.error("Failed to send voice note");
+      setMessages((prev) => prev.filter((m) => m.id !== tmpId));
+    } finally {
+      setUploadingCount((c) => c - 1);
     }
   };
 
@@ -317,40 +422,63 @@ function ChatPage() {
 
         {/* Composer */}
         <div className="px-3 pt-2 pb-4 flex items-end gap-2">
-          <div className="flex-1 flex items-end gap-1 bg-card border border-border/60 rounded-3xl pr-2 pl-3 py-1.5">
-            <button className="size-9 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground shrink-0">
-              <Smile className="size-5" />
-            </button>
-            <textarea
-              ref={inputRef}
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              onKeyDown={handleKey}
-              placeholder="Message..."
-              rows={1}
-              className="flex-1 bg-transparent border-none outline-none resize-none text-[15px] py-2 max-h-32 placeholder:text-muted-foreground"
+          {recording ? (
+            <VoiceRecorder
+              onCancel={() => setRecording(false)}
+              onSend={handleVoiceSend}
             />
+          ) : (
+            <div className="flex-1 flex items-end gap-1 bg-card border border-border/60 rounded-3xl pr-2 pl-3 py-1.5">
+              <button className="size-9 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground shrink-0">
+                <Smile className="size-5" />
+              </button>
+              <textarea
+                ref={inputRef}
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                onKeyDown={handleKey}
+                placeholder="Message..."
+                rows={1}
+                className="flex-1 bg-transparent border-none outline-none resize-none text-[15px] py-2 max-h-32 placeholder:text-muted-foreground"
+              />
+              <button
+                onClick={() => setAttachOpen(true)}
+                className="size-9 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground shrink-0"
+                aria-label="Attach file"
+              >
+                <Paperclip className="size-5" />
+              </button>
+              <button className="size-9 rounded-full flex items-center justify-center text-primary shrink-0" aria-label="AI assistant">
+                <Bot className="size-5" />
+              </button>
+            </div>
+          )}
+          {!recording && (
             <button
-              onClick={() => setAttachOpen(true)}
-              className="size-9 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground shrink-0"
+              onClick={() => {
+                if (text.trim()) handleSend();
+                else setRecording(true);
+              }}
+              disabled={sending}
+              className="size-12 rounded-full bg-gradient-primary shadow-fab flex items-center justify-center text-primary-foreground active:scale-95 transition-transform disabled:opacity-60"
+              aria-label={text.trim() ? "Send" : "Record voice"}
             >
-              <Paperclip className="size-5" />
+              {text.trim() ? <Send className="size-5" /> : <Mic className="size-5" />}
             </button>
-            <button className="size-9 rounded-full flex items-center justify-center text-primary shrink-0">
-              <Bot className="size-5" />
-            </button>
-          </div>
-          <button
-            onClick={text.trim() ? handleSend : undefined}
-            disabled={sending}
-            className="size-12 rounded-full bg-gradient-primary shadow-fab flex items-center justify-center text-primary-foreground active:scale-95 transition-transform disabled:opacity-60"
-            aria-label={text.trim() ? "Send" : "Record"}
-          >
-            {text.trim() ? <Send className="size-5" /> : <Mic className="size-5" />}
-          </button>
+          )}
         </div>
 
-        <AttachmentSheet open={attachOpen} onClose={() => setAttachOpen(false)} />
+        {uploadingCount > 0 && (
+          <div className="absolute top-20 left-1/2 -translate-x-1/2 bg-popover/95 backdrop-blur border border-border rounded-full px-3 py-1 text-xs text-muted-foreground shadow-lg z-30">
+            Uploading {uploadingCount} file{uploadingCount > 1 ? "s" : ""}…
+          </div>
+        )}
+
+        <AttachmentSheet
+          open={attachOpen}
+          onClose={() => setAttachOpen(false)}
+          onPick={(files) => handleFiles(files)}
+        />
       </motion.div>
     </MobileFrame>
   );

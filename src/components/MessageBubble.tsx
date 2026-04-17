@@ -5,6 +5,7 @@ import type { Message, Reaction } from "@/lib/types";
 import { formatMessageTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { AttachmentView } from "./AttachmentView";
 
 const REACTIONS = ["❤️", "😂", "😮", "😢", "🙏", "👍"];
 
@@ -112,10 +113,24 @@ export function MessageBubble({
           {message.is_deleted ? (
             <div className="text-sm italic opacity-70">🚫 This message was deleted</div>
           ) : (
-            <div className="text-[15px] leading-snug whitespace-pre-wrap break-words">
-              {message.content}
-              <span className="inline-block w-12" />
-            </div>
+            <>
+              {message.attachment_url && (
+                <AttachmentView
+                  url={message.attachment_url}
+                  type={message.attachment_type}
+                  name={message.attachment_name}
+                  size={message.attachment_size}
+                  duration={message.attachment_duration}
+                  isMine={isMine}
+                />
+              )}
+              {message.content && (
+                <div className="text-[15px] leading-snug whitespace-pre-wrap break-words">
+                  {message.content}
+                  <span className="inline-block w-12" />
+                </div>
+              )}
+            </>
           )}
 
           <div className={cn(
