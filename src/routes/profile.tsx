@@ -11,8 +11,8 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/profile")({
   head: () => ({
     meta: [
-      { title: "Your profile — Nicer" },
-      { name: "description", content: "Edit your Nicer profile." },
+      { title: "Your profile — Nicer Chat" },
+      { name: "description", content: "Edit your Nicer Chat profile." },
     ],
   }),
   component: ProfilePage,
@@ -112,7 +112,7 @@ function ProfilePage() {
 
         <div className="mt-8 space-y-3">
           <div className="bg-card/60 border border-border/60 rounded-2xl p-4">
-            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Your Nicer ID</div>
+            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Your Nicer Chat ID</div>
             <button onClick={copyId} className="mt-2 w-full flex items-center justify-between gap-2 text-left">
               <code className="text-xs text-foreground/80 truncate">{me.id}</code>
               {copied ? <Check className="size-4 text-online" /> : <Copy className="size-4 text-muted-foreground" />}
@@ -123,9 +123,9 @@ function ProfilePage() {
           </div>
 
           <div className="bg-card/60 border border-border/60 rounded-2xl p-4">
-            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">About Nicer</div>
+            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">About Nicer Chat</div>
             <p className="text-sm text-foreground/80 leading-relaxed">
-              Nicer is a no-account, instant messaging experience. Open Nicer in another tab or device to create a second user, then start a chat from the home screen.
+              Nicer Chat is a free, open-source, no-account instant messaging experience built by Highness Chinedu. Open Nicer Chat in another tab or device to create a second user, then start a chat from the home screen.
             </p>
           </div>
         </div>
