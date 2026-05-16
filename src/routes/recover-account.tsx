@@ -25,14 +25,14 @@ function RecoverAccountPage() {
       <StatusBar />
       <DesktopNav active="profile" />
 
-      <div className="flex items-center gap-3 px-4 py-3">
+      <div className="flex min-w-0 items-center gap-3 px-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] py-3">
         <Link to="/" className="size-10 rounded-full hover:bg-muted/60 flex items-center justify-center">
           <ArrowLeft className="size-5" />
         </Link>
         <h1 className="text-xl font-bold font-display">Saved account</h1>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-5 pb-24 lg:pb-8">
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-[max(1.25rem,env(safe-area-inset-left,0px))] pr-[max(1.25rem,env(safe-area-inset-right,0px))] pb-24 lg:pb-8">
         <div className="max-w-md mx-auto space-y-5 pt-3">
           <div className="flex justify-center">
             <div className="flex size-16 items-center justify-center rounded-2xl bg-primary/15 ring-1 ring-primary/25">

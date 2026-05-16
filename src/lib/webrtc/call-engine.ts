@@ -1,8 +1,11 @@
-import type { RealtimeChannel } from "@supabase/supabase-js";
-import { supabase } from "@/integrations/supabase/client";
 import { addCallLogEntry, updateCallLogEntry } from "@/lib/call-history";
 import { playCallSound, stopCallSound } from "@/lib/call-sounds";
-import { CALL_RING_TIMEOUT_MS, ICE_SERVERS, MEDIA_CONSTRAINTS } from "./config";
+import {
+  CALL_RING_TIMEOUT_MS,
+  ICE_DISCONNECT_HANGUP_MS,
+  buildIceServers,
+  MEDIA_CONSTRAINTS,
+} from "./config";
 import type { CallPeer, CallSession, CallSignal, CallSignalType } from "./types";
 import { EMPTY_CALL_SESSION } from "./types";
 
@@ -22,8 +25,10 @@ export class CallEngine {
   private session: CallSession = { ...EMPTY_CALL_SESSION };
   private pc: RTCPeerConnection | null = null;
   private ringTimer: ReturnType<typeof setTimeout> | null = null;
+  private disconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private pendingCandidates: RTCIceCandidateInit[] = [];
   private remoteDescSet = false;
+  private iceRestartAttempts = 0;
   private sendSignal: SendSignal = () => {};
   private callbacks: CallEngineCallbacks;
 
@@ -66,6 +71,24 @@ export class CallEngine {
     }
   }
 
+  private clearDisconnectTimer() {
+    if (this.disconnectTimer) {
+      clearTimeout(this.disconnectTimer);
+      this.disconnectTimer = null;
+    }
+  }
+
+  private scheduleDisconnectHangup() {
+    this.clearDisconnectTimer();
+    this.disconnectTimer = window.setTimeout(() => {
+      this.disconnectTimer = null;
+      if (!this.pc) return;
+      if (this.pc.connectionState === "disconnected" || this.pc.iceConnectionState === "disconnected") {
+        void this.endCall("disconnected");
+      }
+    }, ICE_DISCONNECT_HANGUP_MS);
+  }
+
   private async getUserMedia(video: boolean): Promise<MediaStream> {
     return navigator.mediaDevices.getUserMedia({
       audio: MEDIA_CONSTRAINTS.audio,
@@ -74,7 +97,12 @@ export class CallEngine {
   }
 
   private createPeerConnection() {
-    const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+    this.iceRestartAttempts = 0;
+    const pc = new RTCPeerConnection({
+      iceServers: buildIceServers(),
+      iceCandidatePoolSize: 10,
+      bundlePolicy: "max-bundle",
+    });
 
     pc.onicecandidate = (ev) => {
       if (!ev.candidate || !this.session.chatId) return;
@@ -93,17 +121,44 @@ export class CallEngine {
       this.emit({ remoteStream: stream, phase: "active", startedAt: this.session.startedAt ?? Date.now() });
     };
 
-    pc.onconnectionstatechange = () => {
-      if (pc.connectionState === "connected") {
+    pc.oniceconnectionstatechange = () => {
+      const ice = pc.iceConnectionState;
+      if (ice === "connected" || ice === "completed") {
+        this.clearDisconnectTimer();
         this.clearRingTimer();
         this.emit({ phase: "active", startedAt: this.session.startedAt ?? Date.now() });
       }
-      if (pc.connectionState === "failed") {
+      if (ice === "failed") {
+        if (this.iceRestartAttempts < 1 && typeof pc.restartIce === "function") {
+          this.iceRestartAttempts += 1;
+          try {
+            pc.restartIce();
+            return;
+          } catch {
+            /* fall through */
+          }
+        }
         this.emit({ error: "Connection failed" });
         void this.endCall("failed");
       }
-      if (pc.connectionState === "disconnected") {
-        void this.endCall("disconnected");
+      if (ice === "disconnected") {
+        this.scheduleDisconnectHangup();
+      }
+    };
+
+    pc.onconnectionstatechange = () => {
+      const cs = pc.connectionState;
+      if (cs === "connected") {
+        this.clearDisconnectTimer();
+        this.clearRingTimer();
+        this.emit({ phase: "active", startedAt: this.session.startedAt ?? Date.now() });
+      }
+      if (cs === "failed") {
+        this.emit({ error: "Connection failed" });
+        void this.endCall("failed");
+      }
+      if (cs === "disconnected") {
+        this.scheduleDisconnectHangup();
       }
     };
 
@@ -130,10 +185,12 @@ export class CallEngine {
   }
 
   private closePeer() {
+    this.clearDisconnectTimer();
     this.pc?.close();
     this.pc = null;
     this.remoteDescSet = false;
     this.pendingCandidates = [];
+    this.iceRestartAttempts = 0;
   }
 
   private startRingTimeout() {
@@ -305,15 +362,37 @@ export class CallEngine {
   private cleanup(phase: "idle" | "ended") {
     stopCallSound();
     this.clearRingTimer();
+    this.clearDisconnectTimer();
+    const ended = phase === "ended";
+    /** Keep ids/metadata so CallProvider can finalize chat call-log messages. */
+    const endedSnapshot = ended
+      ? {
+          callId: this.session.callId,
+          chatId: this.session.chatId,
+          peer: this.session.peer,
+          direction: this.session.direction,
+          video: this.session.video,
+          startedAt: this.session.startedAt,
+          error: this.session.error,
+        }
+      : null;
+
     this.stopStreams();
     this.closePeer();
-    const ended = phase === "ended";
-    this.emit({
-      ...EMPTY_CALL_SESSION,
-      phase: ended ? "ended" : "idle",
-    });
-    if (ended) {
+
+    if (ended && endedSnapshot?.callId) {
+      this.emit({
+        ...endedSnapshot,
+        phase: "ended",
+        localStream: null,
+        remoteStream: null,
+        muted: false,
+        videoEnabled: endedSnapshot.video,
+        pendingOffer: undefined,
+      });
       setTimeout(() => this.emit({ ...EMPTY_CALL_SESSION, phase: "idle" }), 600);
+    } else {
+      this.emit({ ...EMPTY_CALL_SESSION, phase: "idle" });
     }
   }
 

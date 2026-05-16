@@ -164,7 +164,7 @@ function GroupProfilePage() {
     return (
       <div className="flex flex-1 flex-col min-h-0">
         <StatusBar />
-        <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">
+        <div className="flex min-h-0 flex-1 items-center justify-center text-sm text-muted-foreground">
           Loading…
         </div>
       </div>
@@ -172,10 +172,10 @@ function GroupProfilePage() {
   }
 
   return (
-    <div className="flex flex-col min-h-0 flex-1 w-full bg-background">
+    <div className="flex min-h-0 w-full flex-1 flex-col bg-background">
       <StatusBar />
-      <div className="flex flex-col min-h-0 flex-1 max-w-lg mx-auto w-full">
-        <div className="flex items-center gap-2 px-4 pt-12 pb-4 border-b border-border/40">
+      <div className="mx-auto flex min-h-0 w-full max-w-lg min-w-0 flex-1 flex-col">
+        <div className="flex items-center gap-2 border-b border-border/40 px-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] pb-4 pt-[max(2.75rem,calc(0.5rem+env(safe-area-inset-top,0px)))]">
           <button
             type="button"
             onClick={() => navigate({ to: "/chat/$chatId", params: { chatId } })}
@@ -186,8 +186,8 @@ function GroupProfilePage() {
           <h1 className="text-lg font-semibold font-display">Group info</h1>
         </div>
 
-        <div className="flex-1 overflow-y-auto scrollbar-none pb-8">
-          <div className="flex flex-col items-center px-6 pt-8 pb-6">
+        <div className="min-h-0 flex-1 overflow-y-auto scrollbar-none pb-8">
+          <div className="flex flex-col items-center px-[max(1.25rem,env(safe-area-inset-left,0px))] pr-[max(1.25rem,env(safe-area-inset-right,0px))] pb-6 pt-8">
             <div className="relative">
               <Avatar src={group.avatar_url} name={group.title ?? "Group"} size={112} />
               {admin && (
@@ -218,14 +218,14 @@ function GroupProfilePage() {
                 </>
               )}
             </div>
-            <h2 className="mt-4 text-2xl font-bold font-display text-center">{group.title ?? "Group"}</h2>
+            <h2 className="mt-4 max-w-full break-words px-1 text-center text-2xl font-bold font-display">{group.title ?? "Group"}</h2>
             <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1.5">
               <Users className="size-4" />
               {members.length} member{members.length === 1 ? "" : "s"}
             </p>
           </div>
 
-          <section className="px-4 space-y-4">
+          <section className="space-y-4 px-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))]">
             {group.description ? (
               <div className="rounded-2xl bg-card/60 border border-border/40 p-4">
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-1">

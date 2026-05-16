@@ -56,7 +56,7 @@ function CallsPage() {
         }
       />
 
-      <div className="lg:hidden flex items-center justify-between px-5 pt-2 pb-3">
+      <div className="lg:hidden flex min-w-0 items-center justify-between gap-2 px-[max(1.25rem,env(safe-area-inset-left,0px))] pr-[max(1.25rem,env(safe-area-inset-right,0px))] pt-[max(0.5rem,env(safe-area-inset-top,0px))] pb-3">
         <div className="flex items-center gap-3">
           <Link to="/" className="lg:hidden size-10 rounded-full hover:bg-muted/60 flex items-center justify-center">
             <ArrowLeft className="size-5" />
@@ -75,8 +75,8 @@ function CallsPage() {
         </Link>
       </div>
 
-      <div className="flex-1 overflow-y-auto scrollbar-none pb-24 lg:pb-4">
-        <div className="w-full px-2 lg:px-6 xl:px-10">
+      <div className="flex-1 min-h-0 overflow-y-auto scrollbar-none pb-24 lg:pb-4">
+        <div className="w-full min-w-0 px-2 lg:px-6 xl:px-10">
           {activeLabel && (
             <div className="mb-3 px-3 py-2.5 rounded-2xl bg-primary/15 border border-primary/40 text-sm font-medium text-primary">
               {activeLabel}

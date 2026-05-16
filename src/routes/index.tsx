@@ -241,14 +241,14 @@ function ChatListPage() {
       />
 
       {/* Header */}
-      <div className="lg:hidden flex items-center justify-between px-5 pt-2 pb-3">
-        <div className="flex items-center gap-3">
-          <AppLogo size="sm" />
-          <div>
+      <div className="lg:hidden flex min-w-0 items-center justify-between gap-2 px-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] pt-[max(0.5rem,env(safe-area-inset-top,0px))] pb-3">
+        <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
+          <AppLogo size="sm" className="shrink-0" />
+          <div className="min-w-0">
             <BrandTitle as="h1" size="lg" />
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           <button className="size-10 rounded-full hover:bg-muted/60 flex items-center justify-center transition-colors">
             <Camera className="size-5" />
           </button>
@@ -258,7 +258,7 @@ function ChatListPage() {
         </div>
       </div>
 
-      <div className="px-4 lg:px-6 xl:px-10 pb-2">
+      <div className="px-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] pb-2 lg:px-6 xl:px-10">
         <Link
           to="/groups/new"
           className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline"
@@ -279,7 +279,7 @@ function ChatListPage() {
       )}
 
       {/* Search */}
-      <div className="px-4 lg:px-6 xl:px-10 pb-3">
+      <div className="px-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] pb-3 lg:px-6 xl:px-10">
         <div className="relative w-full">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
           <input
@@ -292,7 +292,7 @@ function ChatListPage() {
       </div>
 
       {/* Filter pills */}
-      <div className="px-4 lg:px-6 xl:px-10 pb-2 flex gap-2 overflow-x-auto scrollbar-none">
+      <div className="px-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] pb-2 lg:px-6 xl:px-10 flex gap-2 overflow-x-auto scrollbar-none">
         {FILTERS.map((f) => (
           <button
             key={f}
@@ -310,8 +310,8 @@ function ChatListPage() {
       </div>
 
       {/* Chats */}
-      <div className="flex-1 overflow-y-auto scrollbar-none pb-24 lg:pb-4">
-        <div className="w-full px-2 lg:px-6 xl:px-10">
+      <div className="flex-1 min-h-0 overflow-y-auto scrollbar-none pb-24 lg:pb-4">
+        <div className="w-full min-w-0 px-2 lg:px-6 xl:px-10">
           {loading || chats === null ? (
             <ChatListSkeleton />
           ) : filtered.length === 0 ? (
@@ -345,7 +345,7 @@ function ChatListPage() {
           <button
             type="button"
             onClick={() => setNewChatSheetOpen(true)}
-            className="fixed lg:absolute right-5 lg:right-8 xl:right-10 bottom-24 lg:bottom-8 size-14 rounded-2xl bg-gradient-primary shadow-fab flex items-center justify-center text-primary-foreground hover:scale-105 active:scale-95 transition-transform z-50"
+            className="fixed lg:absolute z-50 size-14 rounded-2xl bg-gradient-primary shadow-fab flex items-center justify-center text-primary-foreground hover:scale-105 active:scale-95 transition-transform bottom-[max(6rem,calc(5.25rem+env(safe-area-inset-bottom,0px)))] right-[max(1.25rem,env(safe-area-inset-right,0px))] lg:bottom-8 lg:right-8 xl:right-10"
             aria-label="Start chatting"
           >
             <Plus className="size-7" strokeWidth={2.5} />
@@ -360,7 +360,7 @@ function ChatListPage() {
       ) : !selectMode ? (
         <Link
           to="/new"
-          className="fixed lg:absolute right-5 lg:right-8 xl:right-10 bottom-24 lg:bottom-8 size-14 rounded-2xl bg-gradient-primary shadow-fab flex items-center justify-center text-primary-foreground hover:scale-105 active:scale-95 transition-transform z-50"
+          className="fixed lg:absolute z-50 size-14 rounded-2xl bg-gradient-primary shadow-fab flex items-center justify-center text-primary-foreground hover:scale-105 active:scale-95 transition-transform bottom-[max(6rem,calc(5.25rem+env(safe-area-inset-bottom,0px)))] right-[max(1.25rem,env(safe-area-inset-right,0px))] lg:bottom-8 lg:right-8 xl:right-10"
           aria-label="New chat"
         >
           <Plus className="size-7" strokeWidth={2.5} />

@@ -69,8 +69,8 @@ function NewGroupPage() {
   return (
     <ResponsiveLayout>
       <StatusBar />
-      <div className="flex flex-col min-h-screen max-w-lg mx-auto w-full">
-        <div className="flex items-center gap-2 px-4 pt-12 pb-4">
+      <div className="mx-auto flex min-h-0 w-full max-w-lg flex-1 flex-col min-w-0">
+        <div className="flex items-center gap-2 px-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] pt-[max(2.75rem,calc(0.75rem+env(safe-area-inset-top,0px)))] pb-4">
           <button
             type="button"
             onClick={() => (step === "members" ? navigate({ to: "/" }) : setStep(step === "description" ? "name" : "members"))}
@@ -78,16 +78,16 @@ function NewGroupPage() {
           >
             <ArrowLeft className="size-5" />
           </button>
-          <h1 className="text-xl font-bold font-display flex items-center gap-2">
+          <h1 className="min-w-0 text-lg font-bold font-display flex items-center gap-2 sm:text-xl">
             <Users className="size-5 text-primary" />
             New group
           </h1>
         </div>
 
         {step === "members" && (
-          <div className="flex-1 px-4 pb-8">
-            <p className="text-sm text-muted-foreground mb-4">Select people to add to your group.</p>
-            <ul className="space-y-1 max-h-[50vh] overflow-y-auto">
+          <div className="flex flex-1 min-h-0 flex-col px-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] pb-8">
+            <p className="mb-4 shrink-0 text-sm text-muted-foreground">Select people to add to your group.</p>
+            <ul className="min-h-0 flex-1 space-y-1 overflow-y-auto">
               {profiles.map((p) => {
                 const on = selected.has(p.id);
                 return (
@@ -101,7 +101,7 @@ function NewGroupPage() {
                       )}
                     >
                       <Avatar src={p.avatar_url} name={p.username} size={48} />
-                      <span className="flex-1 text-left font-semibold">{p.username}</span>
+                      <span className="flex-1 min-w-0 text-left font-semibold truncate">{p.username}</span>
                       <span
                         className={cn(
                           "size-6 rounded-full border-2 flex items-center justify-center",
@@ -127,7 +127,7 @@ function NewGroupPage() {
         )}
 
         {step === "name" && (
-          <div className="flex-1 px-4 pb-8">
+          <div className="flex-1 min-h-0 px-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] pb-8">
             <label className="text-sm font-semibold text-primary">Group name</label>
             <input
               autoFocus
@@ -149,7 +149,7 @@ function NewGroupPage() {
         )}
 
         {step === "description" && (
-          <div className="flex-1 px-4 pb-8">
+          <div className="flex-1 min-h-0 px-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] pb-8">
             <label className="text-sm font-semibold text-primary">Description</label>
             <textarea
               autoFocus

@@ -44,7 +44,7 @@ function GroupJoinPage() {
   if (!group) {
     return (
       <ResponsiveLayout>
-        <div className="p-8 text-center mt-20">
+        <div className="mt-20 px-[max(1.5rem,env(safe-area-inset-left,0px))] pr-[max(1.5rem,env(safe-area-inset-right,0px))] py-8 text-center">
           <h1 className="text-xl font-semibold">Group not found</h1>
           <Link to="/" className="inline-block mt-4 text-primary">
             Go home
@@ -56,7 +56,8 @@ function GroupJoinPage() {
 
   return (
     <ResponsiveLayout>
-      <div className="flex flex-col items-center justify-center min-h-screen px-6 text-center max-w-md mx-auto">
+      <div className="flex min-h-0 flex-1 flex-col justify-center px-[max(1.5rem,env(safe-area-inset-left,0px))] pr-[max(1.5rem,env(safe-area-inset-right,0px))] py-10">
+        <div className="mx-auto flex w-full max-w-md min-w-0 flex-col items-center text-center">
         <AppLogo size="lg" className="mb-6" />
         <Users className="size-10 text-primary mb-3" />
         <h1 className="text-2xl font-bold">{group.title}</h1>
@@ -80,6 +81,7 @@ function GroupJoinPage() {
         {!isOnboardingComplete() && me && (
           <p className="mt-4 text-xs text-muted-foreground">Complete welcome setup first, then return to this link.</p>
         )}
+        </div>
       </div>
     </ResponsiveLayout>
   );

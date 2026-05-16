@@ -52,7 +52,7 @@ function ProfilePage() {
       <ResponsiveLayout>
         <StatusBar />
         <DesktopNav active="profile" />
-        <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">Loading…</div>
+        <div className="flex min-h-0 flex-1 items-center justify-center text-sm text-muted-foreground">Loading…</div>
       </ResponsiveLayout>
     );
   }
@@ -153,15 +153,15 @@ function ProfilePage() {
       <StatusBar />
       <DesktopNav active="profile" />
 
-      <div className="flex items-center gap-3 px-4 py-3">
-        <Link to="/" className="size-10 rounded-full hover:bg-muted/60 flex items-center justify-center">
+      <div className="flex min-w-0 items-center gap-3 px-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] py-3">
+        <Link to="/" className="flex size-10 shrink-0 items-center justify-center rounded-full hover:bg-muted/60">
           <ArrowLeft className="size-5" />
         </Link>
-        <h1 className="text-lg font-bold">Your profile</h1>
+        <h1 className="min-w-0 truncate text-lg font-bold">Your profile</h1>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-5 pb-24 lg:pb-8">
-        <div className="max-w-2xl mx-auto">
+      <div className="flex-1 overflow-y-auto px-[max(1.25rem,env(safe-area-inset-left,0px))] pr-[max(1.25rem,env(safe-area-inset-right,0px))] pb-24 min-w-0 lg:pb-8">
+        <div className="mx-auto max-w-2xl min-w-0">
           <div className="flex flex-col items-center pt-4">
             <input
               ref={fileRef}
@@ -216,8 +216,8 @@ function ProfilePage() {
                 </button>
               </div>
             ) : (
-              <div className="mt-5 flex items-center gap-2">
-                <h2 className="text-2xl font-bold font-display">{me.username}</h2>
+              <div className="mt-5 flex min-w-0 max-w-full items-center gap-2">
+                <h2 className="truncate text-2xl font-bold font-display">{me.username}</h2>
                 <button
                   type="button"
                   onClick={startEdit}

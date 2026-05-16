@@ -153,7 +153,7 @@ function StatusPage() {
       <ResponsiveLayout>
         <StatusBar />
         <DesktopNav active="status" />
-        <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">
+        <div className="flex min-h-0 flex-1 items-center justify-center text-sm text-muted-foreground">
           Loading…
         </div>
       </ResponsiveLayout>
@@ -176,7 +176,7 @@ function StatusPage() {
         }}
       />
 
-      <div className="lg:hidden flex items-center justify-between px-5 pt-2 pb-3">
+      <div className="lg:hidden flex min-w-0 items-center justify-between gap-2 px-[max(1.25rem,env(safe-area-inset-left,0px))] pr-[max(1.25rem,env(safe-area-inset-right,0px))] pt-[max(0.5rem,env(safe-area-inset-top,0px))] pb-3">
         <div className="flex items-center gap-3">
           <Link to="/" className="lg:hidden size-10 rounded-full hover:bg-muted/60 flex items-center justify-center">
             <ArrowLeft className="size-5" />
@@ -188,7 +188,7 @@ function StatusPage() {
         </div>
       </div>
 
-      <div className="px-4 pb-3">
+      <div className="px-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] pb-3">
         <div
           role="button"
           tabIndex={0}
@@ -241,8 +241,8 @@ function StatusPage() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto scrollbar-none pb-24 lg:pb-4">
-        <div className="w-full lg:px-6 xl:px-10">
+      <div className="flex-1 min-h-0 overflow-y-auto scrollbar-none pb-24 lg:pb-4">
+        <div className="w-full min-w-0 px-[max(0.75rem,env(safe-area-inset-left,0px))] pr-[max(0.75rem,env(safe-area-inset-right,0px))] lg:px-6 xl:px-10">
           {loading ? (
             <div className="flex justify-center py-16 text-muted-foreground text-sm">Loading statuses…</div>
           ) : (

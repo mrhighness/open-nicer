@@ -1,10 +1,9 @@
 import { playCallSound, stopCallSound } from "@/lib/call-sounds";
 import { notifyGroupCall } from "@/lib/groups";
-import { ICE_SERVERS, MEDIA_CONSTRAINTS } from "./config";
+import { buildIceServers, ICE_DISCONNECT_HANGUP_MS, MEDIA_CONSTRAINTS } from "./config";
 import type { CallPeer } from "./types";
 import {
   EMPTY_GROUP_CALL,
-  type GroupCallParticipant,
   type GroupCallSession,
   type GroupCallSignal,
 } from "./group-call-types";
@@ -28,6 +27,12 @@ export class GroupCallEngine {
   private peers = new Map<string, RTCPeerConnection>();
   private sendSignal: SendGroupSignal = () => {};
   private callbacks: GroupCallCallbacks;
+
+  /** ICE candidates received before setRemoteDescription (per remote peer). */
+  private pendingIce = new Map<string, RTCIceCandidateInit[]>();
+  private hasRemoteDescription = new Map<string, boolean>();
+  private disconnectTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  private iceRestartAttempts = new Map<string, number>();
 
   constructor(callbacks: GroupCallCallbacks) {
     this.callbacks = callbacks;
@@ -100,7 +105,68 @@ export class GroupCallEngine {
     this.updateSounds();
   }
 
+  private clearPeerTimersAndIce(peerId: string) {
+    const t = this.disconnectTimers.get(peerId);
+    if (t) clearTimeout(t);
+    this.disconnectTimers.delete(peerId);
+    this.pendingIce.delete(peerId);
+    this.hasRemoteDescription.delete(peerId);
+    this.iceRestartAttempts.delete(peerId);
+  }
+
+  private scheduleDisconnectHangup(peerId: string) {
+    const existing = this.disconnectTimers.get(peerId);
+    if (existing) clearTimeout(existing);
+    const t = window.setTimeout(() => {
+      this.disconnectTimers.delete(peerId);
+      const pc = this.peers.get(peerId);
+      if (!pc) return;
+      if (pc.connectionState === "disconnected" || pc.iceConnectionState === "disconnected") {
+        this.removeParticipant(peerId);
+      }
+    }, ICE_DISCONNECT_HANGUP_MS);
+    this.disconnectTimers.set(peerId, t);
+  }
+
+  private clearDisconnectHangup(peerId: string) {
+    const t = this.disconnectTimers.get(peerId);
+    if (t) clearTimeout(t);
+    this.disconnectTimers.delete(peerId);
+  }
+
+  private tryRestartIceOnce(peerId: string, pc: RTCPeerConnection): boolean {
+    const n = this.iceRestartAttempts.get(peerId) ?? 0;
+    if (n >= 1 || typeof pc.restartIce !== "function") return false;
+    this.iceRestartAttempts.set(peerId, n + 1);
+    try {
+      pc.restartIce();
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  private markRemoteDescriptionReady(peerId: string) {
+    this.hasRemoteDescription.set(peerId, true);
+    void this.flushPendingIce(peerId);
+  }
+
+  private async flushPendingIce(peerId: string) {
+    const pc = this.peers.get(peerId);
+    if (!pc || !this.hasRemoteDescription.get(peerId)) return;
+    const queued = [...(this.pendingIce.get(peerId) ?? [])];
+    this.pendingIce.set(peerId, []);
+    for (const c of queued) {
+      try {
+        await pc.addIceCandidate(c);
+      } catch {
+        /* stale */
+      }
+    }
+  }
+
   private removeParticipant(peerId: string) {
+    this.clearPeerTimersAndIce(peerId);
     const next = new Map(this.session.participants);
     next.delete(peerId);
     this.emit({ participants: next });
@@ -112,14 +178,24 @@ export class GroupCallEngine {
   }
 
   private createPeer(peer: CallPeer, chatId: string, callId: string, initiator: boolean) {
-    if (this.peers.has(peer.id)) return this.peers.get(peer.id)!;
-    const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+    const peerId = peer.id;
+    if (this.peers.has(peerId)) return this.peers.get(peerId)!;
+
+    this.pendingIce.set(peerId, []);
+    this.hasRemoteDescription.set(peerId, false);
+    this.iceRestartAttempts.set(peerId, 0);
+
+    const pc = new RTCPeerConnection({
+      iceServers: buildIceServers(),
+      iceCandidatePoolSize: 10,
+      bundlePolicy: "max-bundle",
+    });
 
     pc.onicecandidate = (ev) => {
       if (!ev.candidate) return;
       this.signal(chatId, callId, {
         type: "group-ice",
-        to: peer.id,
+        to: peerId,
         candidate: ev.candidate.toJSON(),
       });
     };
@@ -132,22 +208,40 @@ export class GroupCallEngine {
       }
     };
 
-    pc.onconnectionstatechange = () => {
-      if (pc.connectionState === "connected") {
-        this.setParticipant(peer, this.session.participants.get(peer.id)?.stream ?? null, true);
+    pc.oniceconnectionstatechange = () => {
+      const ice = pc.iceConnectionState;
+      if (ice === "connected" || ice === "completed") {
+        this.clearDisconnectHangup(peerId);
+        this.setParticipant(peer, this.session.participants.get(peerId)?.stream ?? null, true);
       }
-      if (pc.connectionState === "failed" || pc.connectionState === "disconnected") {
-        this.removeParticipant(peer.id);
+      if (ice === "failed") {
+        if (!this.tryRestartIceOnce(peerId, pc)) {
+          this.removeParticipant(peerId);
+        }
+      }
+      if (ice === "disconnected") {
+        this.scheduleDisconnectHangup(peerId);
+      }
+    };
+
+    pc.onconnectionstatechange = () => {
+      const cs = pc.connectionState;
+      if (cs === "connected") {
+        this.clearDisconnectHangup(peerId);
+        this.setParticipant(peer, this.session.participants.get(peerId)?.stream ?? null, true);
+      }
+      if (cs === "disconnected") {
+        this.scheduleDisconnectHangup(peerId);
       }
     };
 
     this.session.localStream?.getTracks().forEach((t) => pc.addTrack(t, this.session.localStream!));
-    this.peers.set(peer.id, pc);
+    this.peers.set(peerId, pc);
 
     if (initiator) {
       void pc.createOffer().then((offer) => {
         void pc.setLocalDescription(offer);
-        this.signal(chatId, callId, { type: "group-offer", to: peer.id, sdp: offer });
+        this.signal(chatId, callId, { type: "group-offer", to: peerId, sdp: offer });
       });
     }
 
@@ -257,29 +351,47 @@ export class GroupCallEngine {
     }
 
     if (type === "group-offer" && signal.sdp) {
-      const peer: CallPeer = { id: from, username: "Member", avatar_url: null };
-      const pc = this.createPeer(peer, chatId, callId, false);
-      await pc.setRemoteDescription(signal.sdp);
-      const answer = await pc.createAnswer();
-      await pc.setLocalDescription(answer);
-      this.signal(chatId, callId, { type: "group-answer", to: from, sdp: answer });
+      const peer: CallPeer = {
+        id: from,
+        username: signal.participants?.[0]?.username ?? "Member",
+        avatar_url: signal.participants?.[0]?.avatar_url ?? null,
+      };
       if (!this.session.localStream) {
         const stream = await this.getAudioStream();
         this.emit({ localStream: stream, phase: "active" });
-        stream.getTracks().forEach((t) => pc.addTrack(t, stream));
       }
+      const pc = this.createPeer(peer, chatId, callId, false);
+      await pc.setRemoteDescription(signal.sdp);
+      this.markRemoteDescriptionReady(from);
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      this.signal(chatId, callId, { type: "group-answer", to: from, sdp: answer });
       return;
     }
 
     if (type === "group-answer" && signal.sdp) {
       const pc = this.peers.get(from);
-      if (pc) await pc.setRemoteDescription(signal.sdp);
+      if (pc) {
+        await pc.setRemoteDescription(signal.sdp);
+        this.markRemoteDescriptionReady(from);
+      }
       return;
     }
 
     if (type === "group-ice" && signal.candidate) {
       const pc = this.peers.get(from);
-      if (pc) await pc.addIceCandidate(signal.candidate).catch(() => {});
+      if (!pc) return;
+      if (!this.hasRemoteDescription.get(from)) {
+        const q = this.pendingIce.get(from) ?? [];
+        q.push(signal.candidate);
+        this.pendingIce.set(from, q);
+        return;
+      }
+      try {
+        await pc.addIceCandidate(signal.candidate);
+      } catch {
+        /* ignore */
+      }
       return;
     }
 
@@ -312,6 +424,9 @@ export class GroupCallEngine {
   /** Reset local state without notifying peers (e.g. on app load). */
   resetSession() {
     stopCallSound();
+    for (const id of this.peers.keys()) {
+      this.clearPeerTimersAndIce(id);
+    }
     this.peers.forEach((pc) => pc.close());
     this.peers.clear();
     this.session.localStream?.getTracks().forEach((t) => t.stop());
@@ -323,6 +438,9 @@ export class GroupCallEngine {
       this.signal(this.session.chatId, this.session.callId, { type: "group-end", to: "*" });
     }
     stopCallSound();
+    for (const id of this.peers.keys()) {
+      this.clearPeerTimersAndIce(id);
+    }
     this.peers.forEach((pc) => pc.close());
     this.peers.clear();
     this.session.localStream?.getTracks().forEach((t) => t.stop());

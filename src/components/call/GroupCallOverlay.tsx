@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Mic, MicOff, PhoneOff, UserPlus, Users } from "lucide-react";
 import { Avatar } from "@/components/Avatar";
@@ -11,6 +11,23 @@ import { useMe } from "@/lib/use-me";
 import type { GroupCallParticipant } from "@/lib/webrtc/group-call-types";
 import { cn } from "@/lib/utils";
 import { isOnboardingComplete } from "@/lib/onboarding";
+
+/** WebRTC remote audio must be wired to an `<audio>` element (waveform alone is silent). */
+function RemotePeerAudio({ stream }: { stream: MediaStream }) {
+  const ref = useRef<HTMLAudioElement>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.srcObject = stream;
+    void el.play().catch(() => {});
+    return () => {
+      el.srcObject = null;
+    };
+  }, [stream]);
+
+  return <audio ref={ref} playsInline autoPlay className="sr-only" aria-hidden />;
+}
 
 function CallParticipant({
   participant,
@@ -114,6 +131,16 @@ export function GroupCallOverlay() {
     return !!p.stream;
   };
 
+  const remoteAudioStreams = useMemo(() => {
+    const out: MediaStream[] = [];
+    for (const p of session.participants.values()) {
+      if (me && p.id === me.id) continue;
+      if (!p.stream?.getAudioTracks().length) continue;
+      out.push(p.stream);
+    }
+    return out;
+  }, [session.participants, me?.id]);
+
   return (
     <AnimatePresence>
       {visible && (
@@ -124,7 +151,10 @@ export function GroupCallOverlay() {
           className="fixed inset-0 z-[110] flex flex-col"
           style={{ backgroundImage: "var(--gradient-app)" }}
         >
-          <div className="pt-14 pb-4 text-center">
+          {remoteAudioStreams.map((stream) => (
+            <RemotePeerAudio key={stream.id} stream={stream} />
+          ))}
+          <div className="pb-4 pt-[max(3.5rem,calc(0.75rem+env(safe-area-inset-top,0px)))] text-center">
             <h1 className="text-lg font-semibold text-foreground/90">{title}</h1>
             <p className="text-2xl font-mono font-semibold mt-3 tabular-nums">
               {session.phase === "active" ? formatCallDuration(durationSec) : "00:00"}
@@ -160,7 +190,14 @@ export function GroupCallOverlay() {
             </div>
           </div>
 
-          <div className="px-8 pb-10 space-y-6">
+          <div
+            className="space-y-6 px-8 pt-2"
+            style={{
+              paddingBottom: "max(2.5rem, env(safe-area-inset-bottom, 0px))",
+              paddingLeft: "max(2rem, env(safe-area-inset-left, 0px))",
+              paddingRight: "max(2rem, env(safe-area-inset-right, 0px))",
+            }}
+          >
             <div className="flex justify-center gap-10">
               <button
                 type="button"

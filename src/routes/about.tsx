@@ -31,15 +31,15 @@ function AboutPage() {
     <ResponsiveLayout>
       <StatusBar />
 
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-border/40">
+      <div className="flex min-w-0 items-center gap-3 border-b border-border/40 px-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] py-3">
         <Link to="/profile" className="size-10 rounded-full hover:bg-muted/60 flex items-center justify-center">
           <ArrowLeft className="size-5" />
         </Link>
         <h1 className="text-lg font-bold">About</h1>
       </div>
 
-      <div className="flex-1 overflow-y-auto pb-12">
-        <div className="max-w-2xl mx-auto px-5 lg:px-8">
+      <div className="min-h-0 flex-1 overflow-y-auto pb-[max(3rem,env(safe-area-inset-bottom,0px))]">
+        <div className="mx-auto max-w-2xl min-w-0 px-[max(1.25rem,env(safe-area-inset-left,0px))] pr-[max(1.25rem,env(safe-area-inset-right,0px))] lg:px-8">
           <div className="pt-8 pb-6 text-center">
             <AppLogo size="lg" className="mx-auto mb-4" />
             <p className="text-[11px] font-semibold uppercase tracking-widest text-primary mb-2">
@@ -75,7 +75,7 @@ function AboutPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-2 mb-8 max-w-md mx-auto">
+          <div className="mx-auto mb-8 grid min-w-0 max-w-md grid-cols-3 gap-1.5 sm:gap-2">
             <FeaturePill icon={Lock} label="Private" />
             <FeaturePill icon={Zap} label="Real-time" />
             <FeaturePill icon={Heart} label="Free forever" />
@@ -248,9 +248,9 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function FeaturePill({ icon: Icon, label }: { icon: React.ComponentType<{ className?: string }>; label: string }) {
   return (
-    <div className="bg-card/60 border border-border/60 rounded-2xl py-3 flex flex-col items-center gap-1">
-      <Icon className="size-4 text-primary" />
-      <div className="text-[11px] font-semibold">{label}</div>
+    <div className="flex min-w-0 flex-col items-center gap-1 rounded-2xl border border-border/60 bg-card/60 py-2.5 sm:py-3">
+      <Icon className="size-4 shrink-0 text-primary" />
+      <div className="px-0.5 text-center text-[10px] font-semibold leading-tight sm:text-[11px]">{label}</div>
     </div>
   );
 }

@@ -57,31 +57,31 @@ function NewChatPage() {
   return (
     <ResponsiveLayout>
       <StatusBar />
-
-      <div className="flex items-center gap-3 px-4 py-3">
-        <Link to="/" className="size-10 rounded-full hover:bg-muted/60 flex items-center justify-center">
-          <ArrowLeft className="size-5" />
-        </Link>
-        <div>
-          <h1 className="text-lg font-bold">New chat</h1>
-          <p className="text-xs text-muted-foreground">Pick someone to message</p>
+      <div className="flex min-h-0 flex-1 flex-col">
+        <div className="flex shrink-0 items-center gap-3 px-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] py-3">
+          <Link to="/" className="flex size-10 shrink-0 items-center justify-center rounded-full hover:bg-muted/60">
+            <ArrowLeft className="size-5" />
+          </Link>
+          <div className="min-w-0">
+            <h1 className="text-lg font-bold">New chat</h1>
+            <p className="text-xs text-muted-foreground">Pick someone to message</p>
+          </div>
         </div>
-      </div>
 
-      <div className="px-4 pb-3">
-        <div className="relative max-w-md lg:max-w-lg mx-auto lg:mx-0">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search people"
-            className="w-full h-11 pl-11 pr-4 rounded-2xl bg-card/60 border border-border/60 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
-          />
+        <div className="shrink-0 px-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] pb-3">
+          <div className="relative mx-auto w-full max-w-md lg:mx-0 lg:max-w-lg">
+            <Search className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search people"
+              className="h-11 w-full rounded-2xl border border-border/60 bg-card/60 pl-11 pr-4 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+            />
+          </div>
         </div>
-      </div>
 
-      <div className="flex-1 overflow-y-auto scrollbar-none pb-6">
-        <div className="max-w-4xl mx-auto">
+      <div className="min-h-0 flex-1 overflow-y-auto scrollbar-none pb-[max(1.5rem,env(safe-area-inset-bottom,0px))]">
+        <div className="mx-auto w-full max-w-4xl min-w-0">
           {profiles === null ? (
             <div className="px-6 py-10 text-center text-muted-foreground text-sm">Loading…</div>
           ) : filtered.length === 0 ? (
@@ -115,6 +115,7 @@ function NewChatPage() {
           )}
         </div>
       </div>
+    </div>
     </ResponsiveLayout>
   );
 }

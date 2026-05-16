@@ -23,12 +23,12 @@ export function DesktopNav({ active, trailing }: DesktopNavProps) {
 
   return (
     <header className="hidden lg:flex w-full shrink-0 items-center gap-6 border-b border-border/40 px-6 xl:px-10 py-3">
-      <Link to="/" className="flex items-center gap-3 shrink-0 min-w-[200px]">
+      <Link to="/" className="flex min-w-0 shrink-0 items-center gap-3 sm:min-w-[180px] lg:min-w-[200px]">
         <AppLogo size="sm" />
         <BrandTitle size="md" />
       </Link>
 
-      <nav className="flex flex-1 items-center justify-center gap-1.5" aria-label="Main">
+      <nav className="flex min-w-0 flex-1 items-center justify-center gap-1 sm:gap-1.5" aria-label="Main">
         {items.map((item) => (
           <Link
             key={item.key}
@@ -51,7 +51,7 @@ export function DesktopNav({ active, trailing }: DesktopNavProps) {
         ))}
       </nav>
 
-      <div className="flex min-w-[200px] items-center justify-end gap-2 shrink-0">{trailing}</div>
+      <div className="flex min-w-0 shrink-0 items-center justify-end gap-2 sm:min-w-[140px] lg:min-w-[200px]">{trailing}</div>
     </header>
   );
 }

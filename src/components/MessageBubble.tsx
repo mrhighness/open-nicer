@@ -163,7 +163,7 @@ export function MessageBubble({
           onPointerLeave={cancelLongPress}
           onContextMenu={handleContextMenu}
           className={cn(
-            "message-bubble max-w-[78%] relative z-[1] select-none",
+            "message-bubble relative z-[1] max-w-[min(22rem,calc(100vw-2.5rem))] select-none sm:max-w-[78%]",
             isSticker
               ? "px-1 py-1 bg-transparent shadow-none"
               : cn(

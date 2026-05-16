@@ -588,10 +588,10 @@ function ChatPage() {
   };
 
   return (
-    <motion.div className="absolute inset-0 flex flex-col" style={{ backgroundImage: "var(--gradient-app)" }}>
+    <motion.div className="absolute inset-0 flex min-w-0 flex-col" style={{ backgroundImage: "var(--gradient-app)" }}>
         {/* Header */}
         <div className="bg-gradient-header backdrop-blur-xl border-b border-border/40">
-          <div className="flex items-center justify-between px-3 pt-12 lg:pt-3 pb-3">
+          <div className="flex items-center justify-between gap-1 px-[max(0.75rem,env(safe-area-inset-left,0px))] pr-[max(0.75rem,env(safe-area-inset-right,0px))] pt-[max(2.75rem,calc(0.5rem+env(safe-area-inset-top,0px)))] pb-3 lg:pt-3">
             <div className="flex items-center gap-2 flex-1 min-w-0">
               <button
                 onClick={() => navigate({ to: "/" })}
@@ -632,7 +632,7 @@ function ChatPage() {
                 </button>
               )}
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex shrink-0 items-center gap-1">
               <button 
                 onClick={() => setCameraOpen(true)}
                 className="size-9 rounded-full hover:bg-muted/60 flex items-center justify-center"
@@ -792,16 +792,23 @@ function ChatPage() {
           )}
         </AnimatePresence>
 
-        {/* Composer */}
-        <div className="px-3 pt-2 pb-4">
-          <div className="max-w-4xl mx-auto flex items-end gap-2">
+        {/* Composer — safe-area + min-w-0 avoids clipping the mic FAB on notched Android (e.g. S22). */}
+        <div
+          className="pt-2 w-full min-w-0 box-border"
+          style={{
+            paddingLeft: "max(0.75rem, env(safe-area-inset-left, 0px))",
+            paddingRight: "max(0.75rem, env(safe-area-inset-right, 0px))",
+            paddingBottom: "max(1rem, env(safe-area-inset-bottom, 0px))",
+          }}
+        >
+          <div className="max-w-4xl mx-auto flex items-end gap-2 min-w-0 w-full">
             {recording ? (
               <VoiceRecorder
                 onCancel={() => setRecording(false)}
                 onSend={handleVoiceSend}
               />
             ) : (
-              <div className="flex-1 flex items-end gap-1 bg-card border border-border/60 rounded-3xl pr-2 pl-3 py-1.5">
+              <div className="flex-1 min-w-0 flex items-end gap-1 bg-card border border-border/60 rounded-3xl pr-2 pl-3 py-1.5">
                 <button
                   type="button"
                   onClick={() => {
@@ -847,12 +854,13 @@ function ChatPage() {
             )}
             {!recording && (
               <button
+                type="button"
                 onClick={() => {
                   if (text.trim()) handleSend();
                   else setRecording(true);
                 }}
                 disabled={sending}
-                className="size-12 rounded-full bg-gradient-primary shadow-fab flex items-center justify-center text-primary-foreground active:scale-95 transition-transform disabled:opacity-60"
+                className="shrink-0 size-12 rounded-full bg-gradient-primary shadow-fab flex items-center justify-center text-primary-foreground active:scale-95 transition-transform disabled:opacity-60"
                 aria-label={text.trim() ? "Send" : "Record voice"}
               >
                 {text.trim() ? <Send className="size-5" /> : <Mic className="size-5" />}

@@ -16,7 +16,7 @@ function ChatIdLayout() {
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={isGroupInfo ? "group-info" : "chat-thread"}
-            className="absolute inset-0 flex flex-col"
+            className="absolute inset-0 flex min-w-0 flex-col"
             initial={{ x: isGroupInfo ? "100%" : 0, opacity: isGroupInfo ? 0.92 : 1 }}
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: isGroupInfo ? "100%" : "-18%", opacity: isGroupInfo ? 0.92 : 0.85 }}

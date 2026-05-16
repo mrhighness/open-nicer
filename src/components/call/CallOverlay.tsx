@@ -62,6 +62,23 @@ function VideoTile({
   );
 }
 
+/** Voice-only calls need an audio element; remote video uses a video element which also plays audio. */
+function RemoteVoiceAudio({ stream }: { stream: MediaStream | null }) {
+  const ref = useRef<HTMLAudioElement>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.srcObject = stream;
+    if (stream) void el.play().catch(() => {});
+    return () => {
+      el.srcObject = null;
+    };
+  }, [stream]);
+
+  return <audio ref={ref} playsInline autoPlay className="hidden" aria-hidden />;
+}
+
 function RingPulse() {
   return (
     <>
@@ -115,6 +132,9 @@ export function CallOverlay() {
           className="fixed inset-0 z-[100] flex flex-col bg-background"
           style={{ backgroundImage: "var(--gradient-app)" }}
         >
+          {session.phase === "active" && !session.video && (
+            <RemoteVoiceAudio stream={session.remoteStream} />
+          )}
           {/* Remote / main view */}
           <div className="flex-1 relative min-h-0">
             {session.phase === "active" && session.video ? (
@@ -167,7 +187,14 @@ export function CallOverlay() {
           </div>
 
           {/* Controls */}
-          <div className="shrink-0 px-6 pb-10 pt-4 bg-gradient-to-t from-black/60 to-transparent">
+          <div
+            className="shrink-0 px-6 pt-4 bg-gradient-to-t from-black/60 to-transparent"
+            style={{
+              paddingBottom: "max(2.5rem, env(safe-area-inset-bottom, 0px))",
+              paddingLeft: "max(1.5rem, env(safe-area-inset-left, 0px))",
+              paddingRight: "max(1.5rem, env(safe-area-inset-right, 0px))",
+            }}
+          >
             {session.phase === "incoming" ? (
               <div className="flex items-center justify-center gap-10 max-w-md mx-auto">
                 <CallAction
@@ -195,14 +222,16 @@ export function CallOverlay() {
                       onClick={toggleMute}
                     />
                     {session.video && (
-                      <ControlButton
-                        icon={session.videoEnabled ? Video : VideoOff}
-                        label={session.videoEnabled ? "Camera" : "Camera off"}
-                        active={!session.videoEnabled}
-                        onClick={toggleVideo}
-                      />
+                      <>
+                        <ControlButton
+                          icon={session.videoEnabled ? Video : VideoOff}
+                          label={session.videoEnabled ? "Camera" : "Camera off"}
+                          active={!session.videoEnabled}
+                          onClick={toggleVideo}
+                        />
+                        <ControlButton icon={RotateCcw} label="Flip" onClick={() => {}} />
+                      </>
                     )}
-                    <ControlButton icon={RotateCcw} label="Flip" onClick={() => {}} />
                   </div>
                 )}
                 <CallAction

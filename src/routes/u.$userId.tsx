@@ -180,7 +180,7 @@ function PublicProfilePage() {
         <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/60 to-black/88" />
       </div>
 
-      <header className="relative z-10 flex items-center justify-between gap-3 px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-2">
+      <header className="relative z-10 flex min-w-0 items-center justify-between gap-2 px-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] pb-2 pt-[max(0.75rem,env(safe-area-inset-top,0px))]">
         <button
           type="button"
           onClick={goBack}
@@ -211,7 +211,7 @@ function PublicProfilePage() {
         )}
       </header>
 
-      <div className="relative z-10 flex-1 flex flex-col items-center px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-2">
+      <div className="relative z-10 flex min-h-0 w-full min-w-0 flex-1 flex-col items-center overflow-y-auto px-[max(1.25rem,env(safe-area-inset-left,0px))] pr-[max(1.25rem,env(safe-area-inset-right,0px))] pb-[max(1.5rem,env(safe-area-inset-bottom,0px))] pt-2">
         <Avatar
           src={profile.avatar_url}
           name={profile.username}
@@ -219,7 +219,7 @@ function PublicProfilePage() {
           className="shadow-2xl"
         />
 
-        <h1 className="mt-7 text-center text-3xl font-bold font-display tracking-tight text-white drop-shadow-sm">
+        <h1 className="mt-7 max-w-full break-words px-2 text-center text-3xl font-bold font-display tracking-tight text-white drop-shadow-sm">
           {profile.username}
         </h1>
 
@@ -271,7 +271,7 @@ function PublicProfilePage() {
               </p>
             ) : null}
 
-            <div className="mt-10 grid w-full max-w-md grid-cols-2 gap-3">
+            <div className="mt-10 grid w-full max-w-md min-w-0 grid-cols-2 gap-2 sm:gap-3">
               <button
                 type="button"
                 onClick={() => void onMessage()}

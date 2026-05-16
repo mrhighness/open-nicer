@@ -16,7 +16,7 @@ type Props = {
 
 export function ChatListSelectionBar({ count, onCancel, onDelete, onBlock, onMute }: Props) {
   return (
-    <div className="flex items-center gap-2 px-4 lg:px-6 xl:px-10 py-2 bg-card/80 border-b border-border/50 backdrop-blur-md">
+    <div className="flex items-center gap-2 px-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] py-2 bg-card/80 border-b border-border/50 backdrop-blur-md">
       <button
         type="button"
         onClick={onCancel}
@@ -25,7 +25,7 @@ export function ChatListSelectionBar({ count, onCancel, onDelete, onBlock, onMut
       >
         <X className="size-5" />
       </button>
-      <span className="flex-1 text-sm font-semibold">{count} selected</span>
+      <span className="min-w-0 flex-1 truncate text-sm font-semibold">{count} selected</span>
       <button
         type="button"
         onClick={onDelete}
