@@ -6,10 +6,12 @@ export function AttachmentSheet({
   open,
   onClose,
   onPick,
+  onCameraClick,
 }: {
   open: boolean;
   onClose: () => void;
   onPick: (files: FileList, source: "gallery" | "camera" | "video" | "document") => void;
+  onCameraClick?: () => void;
 }) {
   const galleryRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
@@ -18,7 +20,7 @@ export function AttachmentSheet({
 
   const items = [
     { icon: Image, label: "Photos", color: "from-pink-500 to-rose-500", action: () => galleryRef.current?.click() },
-    { icon: Camera, label: "Camera", color: "from-purple-500 to-indigo-500", action: () => cameraRef.current?.click() },
+    { icon: Camera, label: "Camera", color: "from-purple-500 to-indigo-500", action: () => { onClose(); onCameraClick?.(); } },
     { icon: Film, label: "Video", color: "from-violet-500 to-fuchsia-500", action: () => videoRef.current?.click() },
     { icon: FileText, label: "Document", color: "from-teal-500 to-emerald-500", action: () => docRef.current?.click() },
     { icon: MapPin, label: "Location", color: "from-sky-500 to-blue-500", action: onClose },

@@ -9,12 +9,41 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as StatusRouteImport } from './routes/status'
+import { Route as RetainAccountRouteImport } from './routes/retain-account'
+import { Route as RecoverAccountRouteImport } from './routes/recover-account'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as NewRouteImport } from './routes/new'
+import { Route as HcRouteImport } from './routes/hc'
+import { Route as CallsRouteImport } from './routes/calls'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as UUserIdRouteImport } from './routes/u.$userId'
+import { Route as GroupsNewRouteImport } from './routes/groups/new'
+import { Route as GCodeRouteImport } from './routes/g.$code'
 import { Route as ChatChatIdRouteImport } from './routes/chat.$chatId'
+import { Route as ApiGeoRouteImport } from './routes/api/geo'
+import { Route as ChatChatIdIndexRouteImport } from './routes/chat.$chatId.index'
+import { Route as ChatChatIdGroupRouteImport } from './routes/chat.$chatId.group'
+import { Route as ApiPixazoGenerateRouteImport } from './routes/api/pixazo/generate'
+import { Route as ApiDeepaiImageEditorRouteImport } from './routes/api/deepai/image-editor'
+import { Route as ApiPixazoStatusRequestIdRouteImport } from './routes/api/pixazo/status.$requestId'
 
+const StatusRoute = StatusRouteImport.update({
+  id: '/status',
+  path: '/status',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RetainAccountRoute = RetainAccountRouteImport.update({
+  id: '/retain-account',
+  path: '/retain-account',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RecoverAccountRoute = RecoverAccountRouteImport.update({
+  id: '/recover-account',
+  path: '/recover-account',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
@@ -23,6 +52,16 @@ const ProfileRoute = ProfileRouteImport.update({
 const NewRoute = NewRouteImport.update({
   id: '/new',
   path: '/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HcRoute = HcRouteImport.update({
+  id: '/hc',
+  path: '/hc',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CallsRoute = CallsRouteImport.update({
+  id: '/calls',
+  path: '/calls',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AboutRoute = AboutRouteImport.update({
@@ -35,52 +74,229 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const UUserIdRoute = UUserIdRouteImport.update({
+  id: '/u/$userId',
+  path: '/u/$userId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GroupsNewRoute = GroupsNewRouteImport.update({
+  id: '/groups/new',
+  path: '/groups/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GCodeRoute = GCodeRouteImport.update({
+  id: '/g/$code',
+  path: '/g/$code',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ChatChatIdRoute = ChatChatIdRouteImport.update({
   id: '/chat/$chatId',
   path: '/chat/$chatId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiGeoRoute = ApiGeoRouteImport.update({
+  id: '/api/geo',
+  path: '/api/geo',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChatChatIdIndexRoute = ChatChatIdIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ChatChatIdRoute,
+} as any)
+const ChatChatIdGroupRoute = ChatChatIdGroupRouteImport.update({
+  id: '/group',
+  path: '/group',
+  getParentRoute: () => ChatChatIdRoute,
+} as any)
+const ApiPixazoGenerateRoute = ApiPixazoGenerateRouteImport.update({
+  id: '/api/pixazo/generate',
+  path: '/api/pixazo/generate',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiDeepaiImageEditorRoute = ApiDeepaiImageEditorRouteImport.update({
+  id: '/api/deepai/image-editor',
+  path: '/api/deepai/image-editor',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPixazoStatusRequestIdRoute =
+  ApiPixazoStatusRequestIdRouteImport.update({
+    id: '/api/pixazo/status/$requestId',
+    path: '/api/pixazo/status/$requestId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/calls': typeof CallsRoute
+  '/hc': typeof HcRoute
   '/new': typeof NewRoute
   '/profile': typeof ProfileRoute
-  '/chat/$chatId': typeof ChatChatIdRoute
+  '/recover-account': typeof RecoverAccountRoute
+  '/retain-account': typeof RetainAccountRoute
+  '/status': typeof StatusRoute
+  '/api/geo': typeof ApiGeoRoute
+  '/chat/$chatId': typeof ChatChatIdRouteWithChildren
+  '/g/$code': typeof GCodeRoute
+  '/groups/new': typeof GroupsNewRoute
+  '/u/$userId': typeof UUserIdRoute
+  '/api/deepai/image-editor': typeof ApiDeepaiImageEditorRoute
+  '/api/pixazo/generate': typeof ApiPixazoGenerateRoute
+  '/chat/$chatId/group': typeof ChatChatIdGroupRoute
+  '/chat/$chatId/': typeof ChatChatIdIndexRoute
+  '/api/pixazo/status/$requestId': typeof ApiPixazoStatusRequestIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/calls': typeof CallsRoute
+  '/hc': typeof HcRoute
   '/new': typeof NewRoute
   '/profile': typeof ProfileRoute
-  '/chat/$chatId': typeof ChatChatIdRoute
+  '/recover-account': typeof RecoverAccountRoute
+  '/retain-account': typeof RetainAccountRoute
+  '/status': typeof StatusRoute
+  '/api/geo': typeof ApiGeoRoute
+  '/g/$code': typeof GCodeRoute
+  '/groups/new': typeof GroupsNewRoute
+  '/u/$userId': typeof UUserIdRoute
+  '/api/deepai/image-editor': typeof ApiDeepaiImageEditorRoute
+  '/api/pixazo/generate': typeof ApiPixazoGenerateRoute
+  '/chat/$chatId/group': typeof ChatChatIdGroupRoute
+  '/chat/$chatId': typeof ChatChatIdIndexRoute
+  '/api/pixazo/status/$requestId': typeof ApiPixazoStatusRequestIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/calls': typeof CallsRoute
+  '/hc': typeof HcRoute
   '/new': typeof NewRoute
   '/profile': typeof ProfileRoute
-  '/chat/$chatId': typeof ChatChatIdRoute
+  '/recover-account': typeof RecoverAccountRoute
+  '/retain-account': typeof RetainAccountRoute
+  '/status': typeof StatusRoute
+  '/api/geo': typeof ApiGeoRoute
+  '/chat/$chatId': typeof ChatChatIdRouteWithChildren
+  '/g/$code': typeof GCodeRoute
+  '/groups/new': typeof GroupsNewRoute
+  '/u/$userId': typeof UUserIdRoute
+  '/api/deepai/image-editor': typeof ApiDeepaiImageEditorRoute
+  '/api/pixazo/generate': typeof ApiPixazoGenerateRoute
+  '/chat/$chatId/group': typeof ChatChatIdGroupRoute
+  '/chat/$chatId/': typeof ChatChatIdIndexRoute
+  '/api/pixazo/status/$requestId': typeof ApiPixazoStatusRequestIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/about' | '/new' | '/profile' | '/chat/$chatId'
+  fullPaths:
+    | '/'
+    | '/about'
+    | '/calls'
+    | '/hc'
+    | '/new'
+    | '/profile'
+    | '/recover-account'
+    | '/retain-account'
+    | '/status'
+    | '/api/geo'
+    | '/chat/$chatId'
+    | '/g/$code'
+    | '/groups/new'
+    | '/u/$userId'
+    | '/api/deepai/image-editor'
+    | '/api/pixazo/generate'
+    | '/chat/$chatId/group'
+    | '/chat/$chatId/'
+    | '/api/pixazo/status/$requestId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/about' | '/new' | '/profile' | '/chat/$chatId'
-  id: '__root__' | '/' | '/about' | '/new' | '/profile' | '/chat/$chatId'
+  to:
+    | '/'
+    | '/about'
+    | '/calls'
+    | '/hc'
+    | '/new'
+    | '/profile'
+    | '/recover-account'
+    | '/retain-account'
+    | '/status'
+    | '/api/geo'
+    | '/g/$code'
+    | '/groups/new'
+    | '/u/$userId'
+    | '/api/deepai/image-editor'
+    | '/api/pixazo/generate'
+    | '/chat/$chatId/group'
+    | '/chat/$chatId'
+    | '/api/pixazo/status/$requestId'
+  id:
+    | '__root__'
+    | '/'
+    | '/about'
+    | '/calls'
+    | '/hc'
+    | '/new'
+    | '/profile'
+    | '/recover-account'
+    | '/retain-account'
+    | '/status'
+    | '/api/geo'
+    | '/chat/$chatId'
+    | '/g/$code'
+    | '/groups/new'
+    | '/u/$userId'
+    | '/api/deepai/image-editor'
+    | '/api/pixazo/generate'
+    | '/chat/$chatId/group'
+    | '/chat/$chatId/'
+    | '/api/pixazo/status/$requestId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
+  CallsRoute: typeof CallsRoute
+  HcRoute: typeof HcRoute
   NewRoute: typeof NewRoute
   ProfileRoute: typeof ProfileRoute
-  ChatChatIdRoute: typeof ChatChatIdRoute
+  RecoverAccountRoute: typeof RecoverAccountRoute
+  RetainAccountRoute: typeof RetainAccountRoute
+  StatusRoute: typeof StatusRoute
+  ApiGeoRoute: typeof ApiGeoRoute
+  ChatChatIdRoute: typeof ChatChatIdRouteWithChildren
+  GCodeRoute: typeof GCodeRoute
+  GroupsNewRoute: typeof GroupsNewRoute
+  UUserIdRoute: typeof UUserIdRoute
+  ApiDeepaiImageEditorRoute: typeof ApiDeepaiImageEditorRoute
+  ApiPixazoGenerateRoute: typeof ApiPixazoGenerateRoute
+  ApiPixazoStatusRequestIdRoute: typeof ApiPixazoStatusRequestIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/status': {
+      id: '/status'
+      path: '/status'
+      fullPath: '/status'
+      preLoaderRoute: typeof StatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/retain-account': {
+      id: '/retain-account'
+      path: '/retain-account'
+      fullPath: '/retain-account'
+      preLoaderRoute: typeof RetainAccountRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/recover-account': {
+      id: '/recover-account'
+      path: '/recover-account'
+      fullPath: '/recover-account'
+      preLoaderRoute: typeof RecoverAccountRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/profile': {
       id: '/profile'
       path: '/profile'
@@ -93,6 +309,20 @@ declare module '@tanstack/react-router' {
       path: '/new'
       fullPath: '/new'
       preLoaderRoute: typeof NewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hc': {
+      id: '/hc'
+      path: '/hc'
+      fullPath: '/hc'
+      preLoaderRoute: typeof HcRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/calls': {
+      id: '/calls'
+      path: '/calls'
+      fullPath: '/calls'
+      preLoaderRoute: typeof CallsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/about': {
@@ -109,6 +339,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/u/$userId': {
+      id: '/u/$userId'
+      path: '/u/$userId'
+      fullPath: '/u/$userId'
+      preLoaderRoute: typeof UUserIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/groups/new': {
+      id: '/groups/new'
+      path: '/groups/new'
+      fullPath: '/groups/new'
+      preLoaderRoute: typeof GroupsNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/g/$code': {
+      id: '/g/$code'
+      path: '/g/$code'
+      fullPath: '/g/$code'
+      preLoaderRoute: typeof GCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/chat/$chatId': {
       id: '/chat/$chatId'
       path: '/chat/$chatId'
@@ -116,16 +367,93 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ChatChatIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/geo': {
+      id: '/api/geo'
+      path: '/api/geo'
+      fullPath: '/api/geo'
+      preLoaderRoute: typeof ApiGeoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/chat/$chatId/': {
+      id: '/chat/$chatId/'
+      path: '/'
+      fullPath: '/chat/$chatId/'
+      preLoaderRoute: typeof ChatChatIdIndexRouteImport
+      parentRoute: typeof ChatChatIdRoute
+    }
+    '/chat/$chatId/group': {
+      id: '/chat/$chatId/group'
+      path: '/group'
+      fullPath: '/chat/$chatId/group'
+      preLoaderRoute: typeof ChatChatIdGroupRouteImport
+      parentRoute: typeof ChatChatIdRoute
+    }
+    '/api/pixazo/generate': {
+      id: '/api/pixazo/generate'
+      path: '/api/pixazo/generate'
+      fullPath: '/api/pixazo/generate'
+      preLoaderRoute: typeof ApiPixazoGenerateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/deepai/image-editor': {
+      id: '/api/deepai/image-editor'
+      path: '/api/deepai/image-editor'
+      fullPath: '/api/deepai/image-editor'
+      preLoaderRoute: typeof ApiDeepaiImageEditorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/pixazo/status/$requestId': {
+      id: '/api/pixazo/status/$requestId'
+      path: '/api/pixazo/status/$requestId'
+      fullPath: '/api/pixazo/status/$requestId'
+      preLoaderRoute: typeof ApiPixazoStatusRequestIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
+
+interface ChatChatIdRouteChildren {
+  ChatChatIdGroupRoute: typeof ChatChatIdGroupRoute
+  ChatChatIdIndexRoute: typeof ChatChatIdIndexRoute
+}
+
+const ChatChatIdRouteChildren: ChatChatIdRouteChildren = {
+  ChatChatIdGroupRoute: ChatChatIdGroupRoute,
+  ChatChatIdIndexRoute: ChatChatIdIndexRoute,
+}
+
+const ChatChatIdRouteWithChildren = ChatChatIdRoute._addFileChildren(
+  ChatChatIdRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
+  CallsRoute: CallsRoute,
+  HcRoute: HcRoute,
   NewRoute: NewRoute,
   ProfileRoute: ProfileRoute,
-  ChatChatIdRoute: ChatChatIdRoute,
+  RecoverAccountRoute: RecoverAccountRoute,
+  RetainAccountRoute: RetainAccountRoute,
+  StatusRoute: StatusRoute,
+  ApiGeoRoute: ApiGeoRoute,
+  ChatChatIdRoute: ChatChatIdRouteWithChildren,
+  GCodeRoute: GCodeRoute,
+  GroupsNewRoute: GroupsNewRoute,
+  UUserIdRoute: UUserIdRoute,
+  ApiDeepaiImageEditorRoute: ApiDeepaiImageEditorRoute,
+  ApiPixazoGenerateRoute: ApiPixazoGenerateRoute,
+  ApiPixazoStatusRequestIdRoute: ApiPixazoStatusRequestIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}

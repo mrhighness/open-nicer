@@ -18,7 +18,10 @@ export function Avatar({ src, name, size = 48, online, ring, className }: Avatar
     .toUpperCase();
 
   return (
-    <div className={cn("relative shrink-0", className)} style={{ width: size, height: size }}>
+    <div
+      className={cn("relative shrink-0 rounded-full", className)}
+      style={{ width: size, height: size }}
+    >
       <div
         className={cn(
           "rounded-full overflow-hidden bg-gradient-primary flex items-center justify-center text-primary-foreground font-semibold",

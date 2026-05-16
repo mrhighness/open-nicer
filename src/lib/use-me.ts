@@ -1,11 +1,16 @@
 import { useEffect, useState } from "react";
-import { getOrCreateMe } from "./identity";
+import { bootstrapApp } from "./identity";
 import type { Tables } from "@/integrations/supabase/types";
 
 export type Profile = Tables<"profiles">;
 
 let cached: Profile | null = null;
 const listeners = new Set<(p: Profile) => void>();
+
+export function setCachedMe(p: Profile) {
+  cached = p;
+  listeners.forEach((l) => l(p));
+}
 
 export function useMe() {
   const [me, setMe] = useState<Profile | null>(cached);
@@ -14,7 +19,7 @@ export function useMe() {
   useEffect(() => {
     let alive = true;
     if (!cached) {
-      getOrCreateMe()
+      bootstrapApp()
         .then((p) => {
           if (!alive) return;
           cached = p as Profile;
@@ -23,7 +28,11 @@ export function useMe() {
           listeners.forEach((l) => l(p as Profile));
         })
         .catch((e) => {
-          console.error("Failed to init me:", e);
+          const msg =
+            e && typeof e === "object" && "message" in e
+              ? String((e as { message?: string }).message)
+              : String(e);
+          console.error("Failed to init me:", msg || e);
           setLoading(false);
         });
     }

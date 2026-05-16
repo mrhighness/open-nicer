@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence, useMotionValue, useTransform, animate } from "framer-motion";
 import { Reply, Smile, Copy, Trash2, X, Check, CheckCheck } from "lucide-react";
 import type { Message, Reaction } from "@/lib/types";
@@ -6,8 +7,11 @@ import { formatMessageTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { AttachmentView } from "./AttachmentView";
+import { isStickerMessage } from "@/lib/stickers";
 
 const REACTIONS = ["❤️", "😂", "😮", "😢", "🙏", "👍"];
+const SWIPE_REPLY_THRESHOLD = 52;
+const LONG_PRESS_MS = 420;
 
 interface MessageBubbleProps {
   message: Message;
@@ -19,6 +23,7 @@ interface MessageBubbleProps {
   onReply: (m: Message) => void;
   onReact: (m: Message, emoji: string) => void;
   onDelete: (m: Message) => void;
+  suppressEntryAnimation?: boolean;
 }
 
 export function MessageBubble({
@@ -30,38 +35,99 @@ export function MessageBubble({
   onReply,
   onReact,
   onDelete,
+  suppressEntryAnimation = false,
 }: MessageBubbleProps) {
   const x = useMotionValue(0);
-  const replyOpacity = useTransform(x, isMine ? [-80, 0] : [0, 80], [1, 0]);
-  const replyScale = useTransform(x, isMine ? [-80, -20, 0] : [0, 20, 80], [1, 0.5, 0.3]);
+  // Hidden at rest (x = 0); only visible while swiping toward reply
+  const replyOpacity = useTransform(
+    x,
+    isMine ? [-72, -12, 0] : [0, 12, 72],
+    isMine ? [1, 0.45, 0] : [0, 0.45, 1]
+  );
+  const replyScale = useTransform(
+    x,
+    isMine ? [-72, -12, 0] : [0, 12, 72],
+    isMine ? [1, 0.65, 0.25] : [0.25, 0.65, 1]
+  );
   const [menuOpen, setMenuOpen] = useState(false);
-  const longPressTimer = useRef<number | null>(null);
-  const startedAt = useRef(0);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pointerStart = useRef({ x: 0, y: 0 });
+  const swiping = useRef(false);
+  const bubbleRef = useRef<HTMLDivElement>(null);
 
-  const handlePointerDown = () => {
-    startedAt.current = Date.now();
-    longPressTimer.current = window.setTimeout(() => {
-      if (navigator.vibrate) navigator.vibrate(15);
-      setMenuOpen(true);
-    }, 380);
-  };
   const cancelLongPress = () => {
     if (longPressTimer.current) {
-      window.clearTimeout(longPressTimer.current);
+      clearTimeout(longPressTimer.current);
       longPressTimer.current = null;
     }
   };
 
-  const handleDragEnd = (_: unknown, info: { offset: { x: number } }) => {
-    const triggered = isMine ? info.offset.x < -60 : info.offset.x > 60;
-    if (triggered) {
+  const openMenu = () => {
+    cancelLongPress();
+    if (navigator.vibrate) navigator.vibrate(12);
+    setMenuOpen(true);
+  };
+
+  const handleContextMenu = (e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    openMenu();
+  };
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    if (e.button !== 0) return;
+    pointerStart.current = { x: e.clientX, y: e.clientY };
+    swiping.current = false;
+    cancelLongPress();
+    longPressTimer.current = setTimeout(openMenu, LONG_PRESS_MS);
+    bubbleRef.current?.setPointerCapture(e.pointerId);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    const dx = e.clientX - pointerStart.current.x;
+    const dy = e.clientY - pointerStart.current.y;
+
+    if (Math.abs(dx) > 6 || Math.abs(dy) > 6) cancelLongPress();
+
+    const horizontal = Math.abs(dx) > Math.abs(dy) * 1.15;
+    if (!horizontal) return;
+
+    swiping.current = true;
+    const maxDrag = 96;
+    const clamped = isMine
+      ? Math.max(-maxDrag, Math.min(0, dx))
+      : Math.min(maxDrag, Math.max(0, dx));
+
+    if ((isMine && dx < 0) || (!isMine && dx > 0)) {
+      x.set(clamped);
+      if (Math.abs(clamped) > 8) e.preventDefault();
+    }
+  };
+
+  const handlePointerUp = (e: React.PointerEvent) => {
+    cancelLongPress();
+    bubbleRef.current?.releasePointerCapture(e.pointerId);
+
+    const dx = e.clientX - pointerStart.current.x;
+    const triggered = isMine ? dx <= -SWIPE_REPLY_THRESHOLD : dx >= SWIPE_REPLY_THRESHOLD;
+
+    if (swiping.current && triggered) {
       if (navigator.vibrate) navigator.vibrate(10);
       onReply(message);
     }
-    animate(x, 0, { type: "spring", stiffness: 500, damping: 35 });
+
+    swiping.current = false;
+    animate(x, 0, { type: "spring", stiffness: 520, damping: 38 });
   };
 
-  // Group reactions by emoji
+  const handlePointerCancel = () => {
+    cancelLongPress();
+    swiping.current = false;
+    animate(x, 0, { type: "spring", stiffness: 520, damping: 38 });
+  };
+
+  const isSticker = isStickerMessage(message);
+
   const groupedReactions = reactions.reduce<Record<string, number>>((acc, r) => {
     acc[r.emoji] = (acc[r.emoji] || 0) + 1;
     return acc;
@@ -69,42 +135,53 @@ export function MessageBubble({
 
   return (
     <>
-      <div className={cn("flex w-full px-3 mb-1 animate-message-in", isMine ? "justify-end" : "justify-start")}>
-        {/* Reply hint that appears when swiping */}
+      <div
+        className={cn(
+          "relative flex w-full px-3 mb-1",
+          !suppressEntryAnimation && "animate-message-in",
+          isMine ? "justify-end" : "justify-start"
+        )}
+      >
         <motion.div
           style={{ opacity: replyOpacity, scale: replyScale }}
           className={cn(
-            "absolute size-9 rounded-full bg-primary/30 flex items-center justify-center pointer-events-none",
-            isMine ? "right-3" : "left-3"
+            "absolute top-1/2 -translate-y-1/2 size-9 rounded-full bg-primary/25 flex items-center justify-center pointer-events-none z-0",
+            isMine ? "right-2" : "left-2"
           )}
+          aria-hidden
         >
           <Reply className="size-4 text-primary" />
         </motion.div>
 
         <motion.div
-          drag="x"
-          dragConstraints={{ left: isMine ? -100 : 0, right: isMine ? 0 : 100 }}
-          dragElastic={0.4}
-          dragMomentum={false}
-          style={{ x }}
-          onDragEnd={handleDragEnd}
+          ref={bubbleRef}
+          style={{ x, touchAction: "pan-y" }}
           onPointerDown={handlePointerDown}
-          onPointerUp={cancelLongPress}
-          onPointerCancel={cancelLongPress}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerCancel}
           onPointerLeave={cancelLongPress}
+          onContextMenu={handleContextMenu}
           className={cn(
-            "max-w-[78%] rounded-2xl px-3 py-2 relative select-none touch-pan-y",
-            isMine
-              ? "bg-gradient-bubble-me text-bubble-me-foreground shadow-bubble"
-              : "bg-bubble-them text-bubble-them-foreground",
-            showTail && (isMine ? "rounded-br-md" : "rounded-bl-md")
+            "message-bubble max-w-[78%] relative z-[1] select-none",
+            isSticker
+              ? "px-1 py-1 bg-transparent shadow-none"
+              : cn(
+                  "rounded-2xl px-3 py-2",
+                  isMine
+                    ? "bg-gradient-bubble-me text-bubble-me-foreground shadow-bubble"
+                    : "bg-bubble-them text-bubble-them-foreground",
+                  showTail && (isMine ? "rounded-br-md" : "rounded-bl-md")
+                )
           )}
         >
           {replyTo && (
-            <div className={cn(
-              "mb-1.5 px-2 py-1.5 rounded-lg border-l-2 text-xs",
-              isMine ? "bg-black/20 border-white/60" : "bg-primary/10 border-primary"
-            )}>
+            <div
+              className={cn(
+                "mb-1.5 px-2 py-1.5 rounded-lg border-l-2 text-xs",
+                isMine ? "bg-black/20 border-white/60" : "bg-primary/10 border-primary"
+              )}
+            >
               <div className="font-semibold opacity-80">{replyTo.isMine ? "You" : "Them"}</div>
               <div className="opacity-80 line-clamp-2">{replyTo.content}</div>
             </div>
@@ -124,34 +201,40 @@ export function MessageBubble({
                   isMine={isMine}
                 />
               )}
-              {message.content && (
-                <div className="text-[15px] leading-snug whitespace-pre-wrap break-words">
-                  {message.content}
-                  <span className="inline-block w-12" />
-                </div>
-              )}
+              {message.content &&
+                (isSticker ? (
+                  <div className="text-[72px] leading-none py-1 px-1 min-w-[80px]">{message.content}</div>
+                ) : (
+                  <div className="text-[15px] leading-snug whitespace-pre-wrap break-words">
+                    {message.content}
+                    <span className="inline-block w-12" />
+                  </div>
+                ))}
             </>
           )}
 
-          <div className={cn(
-            "absolute bottom-1 right-2 flex items-center gap-1 text-[10px] opacity-80",
-            isMine ? "text-bubble-me-foreground" : "text-muted-foreground"
-          )}>
-            <span>{formatMessageTime(message.created_at)}</span>
-            {isMine && !message.is_deleted && (
-              <CheckCheck className="size-3" strokeWidth={2.5} />
+          <div
+            className={cn(
+              "flex items-center gap-1 text-[10px] opacity-80",
+              isSticker ? "justify-end mt-0.5 px-1" : "absolute bottom-1 right-2",
+              isMine && !isSticker ? "text-bubble-me-foreground" : "text-muted-foreground"
             )}
+          >
+            <span>{formatMessageTime(message.created_at)}</span>
+            {isMine && !message.is_deleted && <CheckCheck className="size-3" strokeWidth={2.5} />}
           </div>
 
-          {/* Reactions chip */}
           {Object.keys(groupedReactions).length > 0 && (
-            <div className={cn(
-              "absolute -bottom-3 flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-popover border border-border shadow-lg animate-reaction-pop",
-              isMine ? "right-2" : "left-2"
-            )}>
+            <div
+              className={cn(
+                "absolute -bottom-3 flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-popover border border-border shadow-lg animate-reaction-pop",
+                isMine ? "right-2" : "left-2"
+              )}
+            >
               {Object.entries(groupedReactions).map(([emoji, count]) => (
                 <span key={emoji} className="text-xs">
-                  {emoji}{count > 1 && <span className="text-[10px] ml-0.5 text-muted-foreground">{count}</span>}
+                  {emoji}
+                  {count > 1 && <span className="text-[10px] ml-0.5 text-muted-foreground">{count}</span>}
                 </span>
               ))}
             </div>
@@ -159,24 +242,36 @@ export function MessageBubble({
         </motion.div>
       </div>
 
-      {/* Long-press action menu */}
-      <AnimatePresence>
-        {menuOpen && (
-          <ReactionSheet
-            message={message}
-            isMine={isMine}
-            onClose={() => setMenuOpen(false)}
-            onReact={(emoji) => { onReact(message, emoji); setMenuOpen(false); }}
-            onReply={() => { onReply(message); setMenuOpen(false); }}
-            onCopy={() => {
-              navigator.clipboard.writeText(message.content);
-              toast.success("Copied");
-              setMenuOpen(false);
-            }}
-            onDelete={() => { onDelete(message); setMenuOpen(false); }}
-          />
+      {typeof document !== "undefined" &&
+        createPortal(
+          <AnimatePresence>
+            {menuOpen && (
+              <ReactionSheet
+                message={message}
+                isMine={isMine}
+                onClose={() => setMenuOpen(false)}
+                onReact={(emoji) => {
+                  onReact(message, emoji);
+                  setMenuOpen(false);
+                }}
+                onReply={() => {
+                  onReply(message);
+                  setMenuOpen(false);
+                }}
+                onCopy={() => {
+                  void navigator.clipboard.writeText(message.content);
+                  toast.success("Copied");
+                  setMenuOpen(false);
+                }}
+                onDelete={() => {
+                  onDelete(message);
+                  setMenuOpen(false);
+                }}
+              />
+            )}
+          </AnimatePresence>,
+          document.body
         )}
-      </AnimatePresence>
     </>
   );
 }
@@ -203,7 +298,8 @@ function ReactionSheet({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end"
+      className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-end touch-none"
+      onContextMenu={(e) => e.preventDefault()}
       onClick={onClose}
     >
       <motion.div
@@ -211,14 +307,15 @@ function ReactionSheet({
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 20, opacity: 0 }}
         transition={{ type: "spring", stiffness: 400, damping: 32 }}
-        className="w-full p-4 space-y-3"
+        className="w-full p-4 pb-8 space-y-3 max-w-lg mx-auto"
         onClick={(e) => e.stopPropagation()}
+        onContextMenu={(e) => e.preventDefault()}
       >
-        {/* Reactions row */}
         <div className="bg-popover/95 backdrop-blur-xl border border-border rounded-3xl p-2 flex items-center justify-around shadow-2xl">
           {REACTIONS.map((emoji) => (
             <button
               key={emoji}
+              type="button"
               onClick={() => onReact(emoji)}
               className="size-12 rounded-full hover:bg-muted flex items-center justify-center text-2xl active:scale-90 transition-transform"
             >
@@ -227,7 +324,6 @@ function ReactionSheet({
           ))}
         </div>
 
-        {/* Action menu */}
         <div className="bg-popover/95 backdrop-blur-xl border border-border rounded-3xl overflow-hidden shadow-2xl">
           <ActionRow icon={Reply} label="Reply" onClick={onReply} />
           <ActionRow icon={Copy} label="Copy" onClick={onCopy} disabled={message.is_deleted} />
@@ -243,10 +339,21 @@ function ReactionSheet({
 }
 
 function ActionRow({
-  icon: Icon, label, onClick, destructive, disabled,
-}: { icon: typeof Reply; label: string; onClick: () => void; destructive?: boolean; disabled?: boolean }) {
+  icon: Icon,
+  label,
+  onClick,
+  destructive,
+  disabled,
+}: {
+  icon: typeof Reply;
+  label: string;
+  onClick: () => void;
+  destructive?: boolean;
+  disabled?: boolean;
+}) {
   return (
     <button
+      type="button"
       onClick={onClick}
       disabled={disabled}
       className={cn(

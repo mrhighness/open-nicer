@@ -1,59 +1,101 @@
-# Nicer Chat
+# Open Nicer
 
-**Nicer Chat** is a beautiful, free, open-source instant messaging web app — no sign-up required. Open it on any device, get an instant identity, and start chatting in real time.
+**Open Nicer** is a beautiful, free, **open-source** instant messaging web app — no sign-up required. Open it on any device, get an instant identity, and start chatting in real time.
 
-> Built by **Highness Chinedu** — Full-Stack Software Engineer, Founder & CEO of **All Things Web Technology Inc.**
+> An open-source product from **[Nicle Inc.](https://allthingswebtech.com)** · Engineered by **[All Things Web Technology Inc.](https://allthingswebtech.com)**  
+> Released to the world by **Mr. Highness Chinedu** (also known as **Mr. Highness HC**)
 
 ---
 
-## ✨ Features
+## What is this project?
 
-- 🚀 **No sign-up** — instant anonymous identity, ready to chat in seconds
-- 💬 **Real-time messaging** — messages delivered instantly across devices
-- 👈 **Swipe to reply** — natural, gesture-based interactions
-- 😍 **Long-press reactions** — react to any message with emoji
-- 🗑️ **Delete for everyone** — full control over your messages
-- 📎 **Rich attachment menu** — photos, camera, documents, and more
-- 📞 **Voice & video call UI** — beautiful interface (calling coming soon)
-- 🌙 **Stunning dark theme** — purple/magenta aesthetic, mobile-first PWA
-- 🔒 **End-to-end encrypted by design** — your conversations stay private
+Open Nicer is a **modern, mobile-first messenger** you can use, fork, or self-host. It proves that real-time chat can feel premium without forcing users through sign-up flows.
 
-## 🛠 Tech Stack
+| | |
+|---|---|
+| **Type** | Open-source web application (MIT License) |
+| **Cost** | Free for everyone — personal, educational, or commercial use |
+| **Sign-up** | None — instant anonymous-style profiles |
+| **Platform** | Any modern browser; PWA-friendly on mobile |
 
-- **React 19** + **TanStack Start** (full-stack React framework)
-- **Tailwind CSS v4** for styling
-- **Framer Motion** for fluid animations & gestures
-- **Postgres** + **Realtime** for instant message delivery
-- **PWA-ready** — installable to home screen on mobile
+### Who is it for?
 
-## 🚀 Getting Started
+- Developers learning **real-time web apps** (React, Supabase, WebRTC)
+- Teams wanting a **polished chat UI** to customize and ship
+- Anyone who wants **instant messaging without accounts**
+- Communities that need a **simple, self-hostable** chat experience
+
+---
+
+## Features
+
+- **No sign-up** — instant profile, ready to chat in seconds  
+- **Real-time messaging** — live delivery, typing indicators, unread badges  
+- **Rich attachments** — photos, camera, video, voice notes, documents  
+- **Stickers & reactions** — emoji stickers and long-press message reactions  
+- **Swipe to reply** — natural mobile gestures  
+- **Voice & video calls** — WebRTC calling with in-app UI  
+- **Privacy settings** — discovery, incoming messages, online status  
+- **Profile photos** — upload an avatar others see immediately  
+- **Security layer** — RLS policies, validation, upload limits, secure sessions  
+- **Stunning dark UI** — purple/magenta theme, desktop + mobile layouts  
+
+---
+
+## Tech stack
+
+- **React 19** + **TanStack Start** (full-stack React)  
+- **Tailwind CSS v4** + **Framer Motion**  
+- **Supabase** — Postgres, Realtime, Storage, Auth  
+- **WebRTC** — peer audio/video  
+- **Cloudflare Workers** — production deployment ready  
+
+---
+
+## Getting started
 
 ```bash
 # Install dependencies
-bun install
+npm install
 
-# Start the dev server
-bun run dev
+# Copy environment variables (see .env.example)
+# VITE_SUPABASE_URL=...
+# VITE_SUPABASE_PUBLISHABLE_KEY=...
+
+# Start dev server
+npm run dev
 ```
 
-Then open [http://localhost:5173](http://localhost:5173) in two different browsers (or one on your phone + one on your laptop) to test real-time messaging between two users.
+Open [http://localhost:5173](http://localhost:5173) in two browsers (or phone + laptop) to test real-time chat between two users.
 
-## 📦 Build for Production
+### Production build
 
 ```bash
-bun run build
+npm run build
 ```
-
-## 📄 License
-
-**Nicer Chat is free and open source.** Anyone is welcome to copy, fork, modify, and use this project — for personal, educational, or commercial purposes. No attribution required, but always appreciated.
-
-Released under the **MIT License**.
-
-## 👨‍💻 About the Author
-
-**Highness Chinedu** is a Full-Stack Software Engineer and the Founder & CEO of **All Things Web Technology Inc.** — a company dedicated to building beautiful, accessible, and modern web experiences.
 
 ---
 
-Made with 💜 by Highness Chinedu.
+## Open source & license
+
+**Open Nicer is free and open source.** You may copy, fork, modify, and use this project for any purpose.
+
+Released under the **[MIT License](LICENSE)**.
+
+Copyright © Nicle Inc. and All Things Web Technology Inc.  
+**Mr. Highness Chinedu** (Mr. Highness HC)
+
+---
+
+## About the author & organizations
+
+**Mr. Highness Chinedu** (Mr. Highness HC) is the Founder & CEO of **Nicle Inc.** and **All Things Web Technology Inc.** — building beautiful, accessible, modern web experiences for everyone.
+
+He released **Open Nicer** to the world as open-source software so developers and users everywhere can benefit from a production-quality messaging foundation.
+
+- **Website:** [allthingswebtech.com](https://allthingswebtech.com)  
+- **Email:** mivasiondb@gmail.com  
+
+---
+
+Made with care by **Mr. Highness Chinedu** · **Nicle Inc.** · **All Things Web Technology Inc.**

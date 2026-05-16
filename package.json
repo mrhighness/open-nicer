@@ -1,5 +1,8 @@
 {
-  "name": "tanstack_start_ts",
+  "name": "open-nicer",
+  "version": "1.0.0",
+  "author": "Mr. Highness Chinedu <mivasiondb@gmail.com> (https://allthingswebtech.com)",
+  "description": "Open Nicer — free open-source messaging from Nicle Inc. No sign-up. Released by Mr. Highness Chinedu (Mr. Highness HC).",
   "private": true,
   "sideEffects": false,
   "type": "module",
@@ -9,7 +12,9 @@
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "db:push": "supabase db push",
+    "db:push:local": "supabase db push --local"
   },
   "dependencies": {
     "@cloudflare/vite-plugin": "^1.25.5",

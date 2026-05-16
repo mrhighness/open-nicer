@@ -1,25 +1,31 @@
-import { useEffect, useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { Search, MoreVertical, Camera, Pin, MessageCircle, Phone, Plus, MessageSquarePlus, CircleDot, User, Bot } from "lucide-react";
-import { MobileFrame } from "@/components/MobileFrame";
+﻿import { useCallback, useEffect, useMemo, useState } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { Search, MoreVertical, Camera, Plus, Users } from "lucide-react";
+import { AppLogo } from "@/components/AppLogo";
+import { BrandTitle } from "@/components/BrandTitle";
+import { homePageHead } from "@/lib/seo";
+import { ResponsiveLayout } from "@/components/ResponsiveLayout";
+import { DesktopNav } from "@/components/DesktopNav";
+import { BottomNav } from "@/components/BottomNav";
+import { useUnread } from "@/contexts/unread-context";
 import { StatusBar } from "@/components/StatusBar";
-import { Avatar } from "@/components/Avatar";
 import { useMe } from "@/lib/use-me";
 import { listChatsForUser } from "@/lib/chats";
-import type { ChatWithMeta } from "@/lib/types";
-import { formatChatListTime } from "@/lib/format";
+import { debounce } from "@/lib/debounce";
+import { invalidateInbox, setCachedInbox } from "@/lib/inbox-cache";
+import type { ChatWithMeta, Message } from "@/lib/types";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { NewChatActionSheet } from "@/components/NewChatActionSheet";
+import { ChatListSelectionBar } from "@/components/ChatListSelectionBar";
+import { loadChatSettings, deleteChats, blockPeers, mutePeers } from "@/lib/chat-settings";
+import { subscribeInboxTyping } from "@/lib/typing-inbox";
+import { isPeerMuted } from "@/lib/chat-settings";
+import { toast } from "sonner";
+import { ChatListRow } from "@/components/ChatListRow";
 
 export const Route = createFileRoute("/")({
-  head: () => ({
-    meta: [
-      { title: "Nicer Chat — Instant messaging, no sign-up" },
-      { name: "description", content: "A beautiful, instant messaging experience. No accounts, just chat." },
-      { property: "og:title", content: "Nicer Chat — Instant messaging, no sign-up" },
-      { property: "og:description", content: "A beautiful, instant messaging experience. No accounts, just chat." },
-    ],
-  }),
+  head: () => homePageHead(),
   component: ChatListPage,
 });
 
@@ -28,45 +34,218 @@ type Filter = typeof FILTERS[number];
 
 function ChatListPage() {
   const { me, loading } = useMe();
+  const navigate = useNavigate();
+  const { getCount, refresh } = useUnread();
   const [chats, setChats] = useState<ChatWithMeta[] | null>(null);
   const [filter, setFilter] = useState<Filter>("All");
   const [search, setSearch] = useState("");
+  const [newChatSheetOpen, setNewChatSheetOpen] = useState(false);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
+  const [typingChats, setTypingChats] = useState<Record<string, boolean>>({});
+  const hasNoChats = chats !== null && chats.length === 0;
+
+  const reload = useCallback(
+    (opts?: { skipCache?: boolean }) => {
+      if (!me) return Promise.resolve();
+      if (opts?.skipCache) invalidateInbox(me.id);
+      return listChatsForUser(me.id, { skipCache: !!opts?.skipCache })
+        .then((c) => {
+          setChats(c);
+          return refresh();
+        })
+        .catch(console.error);
+    },
+    [me, refresh]
+  );
+
+  const bumpChatPreview = useCallback(
+    (m: Message) => {
+      if (!me) return;
+      setChats((prev) => {
+        if (!prev) return prev;
+        const idx = prev.findIndex((c) => c.id === m.chat_id);
+        if (idx < 0) {
+          void reload({ skipCache: true });
+          return prev;
+        }
+        const next = [...prev];
+        const row = { ...next[idx], lastMessage: m };
+        next.splice(idx, 1);
+        next.unshift(row);
+        setCachedInbox(me.id, next);
+        return next;
+      });
+      void refresh();
+    },
+    [me, reload, refresh]
+  );
+
+  const debouncedFullReload = useMemo(
+    () =>
+      debounce(() => {
+        void reload({ skipCache: true });
+      }, 600),
+    [reload]
+  );
+
+  useEffect(() => {
+    if (!me) return;
+    void loadChatSettings(me.id);
+  }, [me?.id]);
 
   useEffect(() => {
     if (!me) return;
     let alive = true;
-    const refresh = () => listChatsForUser(me.id).then((c) => { if (alive) setChats(c); }).catch(console.error);
-    refresh();
+    void reload();
 
-    // Realtime: any new message refreshes the list
     const channel = supabase
       .channel("chat-list")
-      .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, refresh)
-      .on("postgres_changes", { event: "*", schema: "public", table: "chats" }, refresh)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "messages" },
+        (payload) => {
+          if (!alive) return;
+          bumpChatPreview(payload.new as Message);
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "messages" },
+        (payload) => {
+          if (!alive) return;
+          bumpChatPreview(payload.new as Message);
+        }
+      )
+      .on("postgres_changes", { event: "*", schema: "public", table: "chats" }, () => {
+        if (!alive) return;
+        void reload({ skipCache: true });
+      })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "profiles" }, () => {
+        if (!alive) return;
+        debouncedFullReload();
+      })
       .subscribe();
 
-    return () => { alive = false; supabase.removeChannel(channel); };
-  }, [me]);
+    return () => {
+      alive = false;
+      debouncedFullReload.cancel();
+      supabase.removeChannel(channel);
+    };
+  }, [me, reload, bumpChatPreview, debouncedFullReload]);
+
+  useEffect(() => {
+    if (!me || !chats?.length) {
+      setTypingChats({});
+      return;
+    }
+    const ids = chats.map((c) => c.id);
+    return subscribeInboxTyping(ids, me.id, (chatId, typing) => {
+      setTypingChats((prev) => {
+        if (!typing) {
+          if (!prev[chatId]) return prev;
+          const next = { ...prev };
+          delete next[chatId];
+          return next;
+        }
+        return { ...prev, [chatId]: true };
+      });
+    });
+  }, [me?.id, chats]);
+
+  const exitSelectMode = () => {
+    setSelectMode(false);
+    setSelectedIds(new Set());
+  };
+
+  const toggleSelect = (chatId: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(chatId)) next.delete(chatId);
+      else next.add(chatId);
+      return next;
+    });
+  };
+
+  const selectedChats = (chats ?? []).filter((c) => selectedIds.has(c.id));
+  const selectedPeerIds = [...new Set(selectedChats.map((c) => c.other.id))];
+
+  const handleDeleteSelected = async () => {
+    if (!me || selectedIds.size === 0) return;
+    try {
+      await deleteChats(me.id, [...selectedIds]);
+      toast.success(`Deleted ${selectedIds.size} chat${selectedIds.size === 1 ? "" : "s"}`);
+      exitSelectMode();
+      await reload();
+    } catch (e) {
+      console.error(e);
+      toast.error("Couldn't delete chats");
+    }
+  };
+
+  const handleBlockSelected = async () => {
+    if (!me || selectedPeerIds.length === 0) return;
+    try {
+      await blockPeers(me.id, selectedPeerIds);
+      toast.success(`Blocked ${selectedPeerIds.length} user${selectedPeerIds.length === 1 ? "" : "s"}`);
+      exitSelectMode();
+      await reload();
+    } catch (e) {
+      console.error(e);
+      toast.error("Couldn't block");
+    }
+  };
+
+  const handleMuteSelected = async () => {
+    if (!me || selectedPeerIds.length === 0) return;
+    try {
+      await mutePeers(me.id, selectedPeerIds);
+      toast.success(`Muted ${selectedPeerIds.length} chat${selectedPeerIds.length === 1 ? "" : "s"}`);
+      exitSelectMode();
+    } catch (e) {
+      console.error(e);
+      toast.error("Couldn't mute");
+    }
+  };
 
   const filtered = (chats ?? []).filter((c) => {
     if (search && !c.other.username.toLowerCase().includes(search.toLowerCase())) return false;
+    const unread = getCount(c.id);
+    if (filter === "Unread") return unread > 0;
+    if (filter === "Groups") return !!c.isGroup;
+    if (filter === "Favorites") return false;
     return true;
   });
 
   return (
-    <MobileFrame>
+    <ResponsiveLayout>
       <StatusBar />
+      <DesktopNav
+        active="chats"
+        trailing={
+          <>
+            <button
+              type="button"
+              className="size-10 rounded-full hover:bg-muted/60 flex items-center justify-center transition-colors"
+            >
+              <Camera className="size-5" />
+            </button>
+            <Link
+              to="/profile"
+              className="size-10 rounded-full hover:bg-muted/60 flex items-center justify-center transition-colors"
+            >
+              <MoreVertical className="size-5" />
+            </Link>
+          </>
+        }
+      />
 
       {/* Header */}
-      <div className="flex items-center justify-between px-5 pt-2 pb-3">
+      <div className="lg:hidden flex items-center justify-between px-5 pt-2 pb-3">
         <div className="flex items-center gap-3">
-          <div className="size-10 rounded-2xl bg-gradient-primary flex items-center justify-center shadow-glow">
-            <MessageCircle className="size-5 text-primary-foreground" strokeWidth={2.5} fill="currentColor" />
-          </div>
+          <AppLogo size="sm" />
           <div>
-            <h1 className="text-2xl font-bold tracking-tight font-display">
-              Nicer <span className="bg-gradient-to-r from-primary-glow to-primary bg-clip-text text-transparent">Chat</span>
-            </h1>
+            <BrandTitle as="h1" size="lg" />
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -79,9 +258,29 @@ function ChatListPage() {
         </div>
       </div>
 
+      <div className="px-4 lg:px-6 xl:px-10 pb-2">
+        <Link
+          to="/groups/new"
+          className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline"
+        >
+          <Users className="size-4" />
+          Create a group
+        </Link>
+      </div>
+
+      {selectMode && (
+        <ChatListSelectionBar
+          count={selectedIds.size}
+          onCancel={exitSelectMode}
+          onDelete={() => void handleDeleteSelected()}
+          onBlock={() => void handleBlockSelected()}
+          onMute={() => void handleMuteSelected()}
+        />
+      )}
+
       {/* Search */}
-      <div className="px-4 pb-3">
-        <div className="relative">
+      <div className="px-4 lg:px-6 xl:px-10 pb-3">
+        <div className="relative w-full">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
           <input
             value={search}
@@ -93,7 +292,7 @@ function ChatListPage() {
       </div>
 
       {/* Filter pills */}
-      <div className="px-4 pb-2 flex gap-2 overflow-x-auto scrollbar-none">
+      <div className="px-4 lg:px-6 xl:px-10 pb-2 flex gap-2 overflow-x-auto scrollbar-none">
         {FILTERS.map((f) => (
           <button
             key={f}
@@ -111,65 +310,74 @@ function ChatListPage() {
       </div>
 
       {/* Chats */}
-      <div className="flex-1 overflow-y-auto scrollbar-none pb-24">
-        {loading || chats === null ? (
-          <ChatListSkeleton />
-        ) : filtered.length === 0 ? (
-          <EmptyState />
-        ) : (
-          <ul className="px-2">
-            {filtered.map((c) => <ChatRow key={c.id} chat={c} />)}
-          </ul>
-        )}
+      <div className="flex-1 overflow-y-auto scrollbar-none pb-24 lg:pb-4">
+        <div className="w-full px-2 lg:px-6 xl:px-10">
+          {loading || chats === null ? (
+            <ChatListSkeleton />
+          ) : filtered.length === 0 ? (
+            <EmptyState />
+          ) : (
+            <ul className="space-y-0.5 lg:space-y-1">
+              {filtered.map((c) => (
+                <ChatListRow
+                  key={c.id}
+                  chat={c}
+                  viewerId={me?.id ?? ""}
+                  unreadCount={isPeerMuted(c.other.id) ? 0 : getCount(c.id)}
+                  isTyping={!!typingChats[c.id]}
+                  selectMode={selectMode}
+                  selected={selectedIds.has(c.id)}
+                  onToggleSelect={() => toggleSelect(c.id)}
+                  onEnterSelect={() => {
+                    setSelectMode(true);
+                    setSelectedIds(new Set([c.id]));
+                  }}
+                />
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
 
-      {/* FAB - new chat */}
-      <Link
-        to="/new"
-        className="absolute right-5 bottom-24 size-14 rounded-2xl bg-gradient-primary shadow-fab flex items-center justify-center text-primary-foreground hover:scale-105 active:scale-95 transition-transform"
-        aria-label="New chat"
-      >
-        <Plus className="size-7" strokeWidth={2.5} />
-      </Link>
+      {/* FAB — hidden in selection mode */}
+      {!selectMode && hasNoChats && me ? (
+        <>
+          <button
+            type="button"
+            onClick={() => setNewChatSheetOpen(true)}
+            className="fixed lg:absolute right-5 lg:right-8 xl:right-10 bottom-24 lg:bottom-8 size-14 rounded-2xl bg-gradient-primary shadow-fab flex items-center justify-center text-primary-foreground hover:scale-105 active:scale-95 transition-transform z-50"
+            aria-label="Start chatting"
+          >
+            <Plus className="size-7" strokeWidth={2.5} />
+          </button>
+          <NewChatActionSheet
+            open={newChatSheetOpen}
+            onClose={() => setNewChatSheetOpen(false)}
+            me={me}
+            onNewChat={() => navigate({ to: "/new" })}
+          />
+        </>
+      ) : !selectMode ? (
+        <Link
+          to="/new"
+          className="fixed lg:absolute right-5 lg:right-8 xl:right-10 bottom-24 lg:bottom-8 size-14 rounded-2xl bg-gradient-primary shadow-fab flex items-center justify-center text-primary-foreground hover:scale-105 active:scale-95 transition-transform z-50"
+          aria-label="New chat"
+        >
+          <Plus className="size-7" strokeWidth={2.5} />
+        </Link>
+      ) : null}
 
       {/* Bottom nav */}
       <BottomNav active="chats" />
-    </MobileFrame>
-  );
-}
-
-function ChatRow({ chat }: { chat: ChatWithMeta }) {
-  const last = chat.lastMessage;
-  const time = last ? formatChatListTime(last.created_at) : formatChatListTime(chat.created_at);
-  return (
-    <li>
-      <Link
-        to="/chat/$chatId"
-        params={{ chatId: chat.id }}
-        className="flex items-center gap-3 px-3 py-3 rounded-2xl hover:bg-card/40 active:bg-card/60 transition-colors"
-      >
-        <Avatar src={chat.other.avatar_url} name={chat.other.username} size={52} online={chat.other.is_online} />
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between gap-2">
-            <h3 className="font-semibold truncate">{chat.other.username}</h3>
-            <span className="text-[11px] text-muted-foreground shrink-0">{time}</span>
-          </div>
-          <div className="flex items-center justify-between gap-2 mt-0.5">
-            <p className="text-sm text-muted-foreground truncate">
-              {last ? (last.is_deleted ? "Message deleted" : last.content) : "Say hi 👋"}
-            </p>
-          </div>
-        </div>
-      </Link>
-    </li>
+    </ResponsiveLayout>
   );
 }
 
 function ChatListSkeleton() {
   return (
-    <ul className="px-2 space-y-1">
+    <ul className="space-y-1">
       {Array.from({ length: 6 }).map((_, i) => (
-        <li key={i} className="flex items-center gap-3 px-3 py-3">
+        <li key={i} className="flex items-center gap-3 px-3 py-3 lg:border lg:border-border/40 lg:bg-card/20 lg:rounded-2xl">
           <div className="size-13 size-[52px] rounded-full bg-muted/50 animate-pulse" />
           <div className="flex-1 space-y-2">
             <div className="h-3 w-1/3 bg-muted/50 rounded animate-pulse" />
@@ -184,40 +392,18 @@ function ChatListSkeleton() {
 function EmptyState() {
   return (
     <div className="px-6 py-16 text-center">
-      <div className="mx-auto size-20 rounded-3xl bg-gradient-primary/20 flex items-center justify-center mb-4">
-        <MessageSquarePlus className="size-9 text-primary" />
-      </div>
+      <AppLogo size="lg" className="mx-auto mb-4" />
       <h3 className="font-semibold text-lg">No chats yet</h3>
-      <p className="text-sm text-muted-foreground mt-1 max-w-[260px] mx-auto">
-        Tap the + button to start a new conversation with anyone on Nicer Chat.
+      <p className="text-sm text-muted-foreground mt-1 max-w-[280px] mx-auto">
+        Tap + to invite friends or start a new chat.
       </p>
+      <Link
+        to="/about"
+        className="inline-block mt-4 text-sm font-medium text-primary hover:underline"
+      >
+        What is Open Nicer?
+      </Link>
     </div>
   );
 }
 
-function BottomNav({ active }: { active: "chats" | "calls" | "ai" | "status" | "profile" }) {
-  const items = [
-    { key: "chats" as const, label: "Chats", icon: MessageCircle, to: "/" },
-    { key: "calls" as const, label: "Calls", icon: Phone, to: "/" },
-    { key: "ai" as const, label: "AI", icon: Bot, to: "/" },
-    { key: "status" as const, label: "Status", icon: CircleDot, to: "/" },
-    { key: "profile" as const, label: "Profile", icon: User, to: "/profile" },
-  ];
-  return (
-    <nav className="absolute bottom-0 left-0 right-0 backdrop-blur-xl bg-card/80 border-t border-border/60 px-2 pt-2 pb-3 flex items-center justify-around">
-      {items.map((it) => (
-        <Link
-          key={it.key}
-          to={it.to}
-          className={cn(
-            "flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-colors",
-            active === it.key ? "text-primary" : "text-muted-foreground"
-          )}
-        >
-          <it.icon className="size-5" strokeWidth={active === it.key ? 2.6 : 2} fill={active === it.key && it.key === "chats" ? "currentColor" : "none"} />
-          <span className="text-[10px] font-semibold">{it.label}</span>
-        </Link>
-      ))}
-    </nav>
-  );
-}

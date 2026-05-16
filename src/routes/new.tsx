@@ -1,22 +1,27 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, Search, Users } from "lucide-react";
-import { MobileFrame } from "@/components/MobileFrame";
+import { ResponsiveLayout } from "@/components/ResponsiveLayout";
 import { StatusBar } from "@/components/StatusBar";
 import { Avatar } from "@/components/Avatar";
 import { useMe } from "@/lib/use-me";
 import { listAllOtherProfiles } from "@/lib/chats";
 import { getOrCreateChatWith } from "@/lib/identity";
 import type { Profile } from "@/lib/types";
+import { shouldShowOnline } from "@/lib/privacy";
 import { toast } from "sonner";
 
+import { EM_DASH, pageHead } from "@/lib/seo";
+import { PRODUCT } from "@/lib/product";
+
 export const Route = createFileRoute("/new")({
-  head: () => ({
-    meta: [
-      { title: "New chat — Nicer Chat" },
-      { name: "description", content: "Start a new conversation on Nicer Chat." },
-    ],
-  }),
+  head: () =>
+    pageHead({
+      title: `New chat ${EM_DASH} ${PRODUCT.name}`,
+      description: `Start a new conversation on ${PRODUCT.name}.`,
+      path: "/new",
+      index: false,
+    }),
   component: NewChatPage,
 });
 
@@ -40,7 +45,7 @@ function NewChatPage() {
       navigate({ to: "/chat/$chatId", params: { chatId: chat.id } });
     } catch (e) {
       console.error(e);
-      toast.error("Could not open chat");
+      toast.error(e instanceof Error ? e.message : "Could not open chat");
       setOpening(null);
     }
   };
@@ -50,7 +55,7 @@ function NewChatPage() {
   );
 
   return (
-    <MobileFrame>
+    <ResponsiveLayout>
       <StatusBar />
 
       <div className="flex items-center gap-3 px-4 py-3">
@@ -64,7 +69,7 @@ function NewChatPage() {
       </div>
 
       <div className="px-4 pb-3">
-        <div className="relative">
+        <div className="relative max-w-md lg:max-w-lg mx-auto lg:mx-0">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
           <input
             value={search}
@@ -76,38 +81,40 @@ function NewChatPage() {
       </div>
 
       <div className="flex-1 overflow-y-auto scrollbar-none pb-6">
-        {profiles === null ? (
-          <div className="px-6 py-10 text-center text-muted-foreground text-sm">Loading…</div>
-        ) : filtered.length === 0 ? (
-          <div className="px-6 py-16 text-center">
-            <div className="mx-auto size-16 rounded-3xl bg-gradient-primary/20 flex items-center justify-center mb-3">
-              <Users className="size-7 text-primary" />
+        <div className="max-w-4xl mx-auto">
+          {profiles === null ? (
+            <div className="px-6 py-10 text-center text-muted-foreground text-sm">Loading…</div>
+          ) : filtered.length === 0 ? (
+            <div className="px-6 py-16 text-center">
+              <div className="mx-auto size-16 rounded-3xl bg-gradient-primary/20 flex items-center justify-center mb-3">
+                <Users className="size-7 text-primary" />
+              </div>
+              <h3 className="font-semibold">No one here yet</h3>
+              <p className="text-sm text-muted-foreground mt-1 max-w-[260px] mx-auto">
+                Open Nicer in another browser or device to create a second user, then come back to start chatting.
+              </p>
             </div>
-            <h3 className="font-semibold">No one here yet</h3>
-            <p className="text-sm text-muted-foreground mt-1 max-w-[260px] mx-auto">
-              Open Nicer Chat in another browser or device to create a second user, then come back to start chatting.
-            </p>
-          </div>
-        ) : (
-          <ul className="px-2">
-            {filtered.map((p) => (
-              <li key={p.id}>
-                <button
-                  onClick={() => handleOpen(p)}
-                  disabled={opening === p.id}
-                  className="w-full flex items-center gap-3 px-3 py-3 rounded-2xl hover:bg-card/40 transition-colors text-left disabled:opacity-60"
-                >
-                  <Avatar src={p.avatar_url} name={p.username} size={48} online={p.is_online} />
-                  <div className="flex-1 min-w-0">
-                    <div className="font-semibold truncate">{p.username}</div>
-                    <div className="text-xs text-muted-foreground truncate">{p.status ?? "Available"}</div>
-                  </div>
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
+          ) : (
+            <ul className="px-2 lg:px-4 lg:grid lg:grid-cols-2 xl:grid-cols-3 lg:gap-2">
+              {filtered.map((p) => (
+                <li key={p.id} className="lg:col-span-1">
+                  <button
+                    onClick={() => handleOpen(p)}
+                    disabled={opening === p.id}
+                    className="w-full flex items-center gap-3 px-3 py-3 rounded-2xl hover:bg-card/40 transition-colors text-left disabled:opacity-60 lg:border lg:border-border/40 lg:bg-card/20 lg:hover:bg-card/60"
+                  >
+                    <Avatar src={p.avatar_url} name={p.username} size={48} online={shouldShowOnline(p) && p.is_online} />
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold truncate">{p.username}</div>
+                      <div className="text-xs text-muted-foreground truncate">{p.status ?? "Available"}</div>
+                    </div>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
-    </MobileFrame>
+    </ResponsiveLayout>
   );
 }

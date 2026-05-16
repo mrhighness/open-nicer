@@ -1,0 +1,13 @@
+# Open Nicer — allow public pages; keep private chats out of search indexes.
+User-agent: *
+Allow: /
+Allow: /about
+Allow: /u/
+Disallow: /chat/
+Disallow: /profile
+Disallow: /new
+Disallow: /groups/
+Disallow: /g/
+
+# Replace with your production domain (set VITE_APP_URL in .env)
+Sitemap: /sitemap.xml

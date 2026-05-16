@@ -3,7 +3,7 @@ CREATE TABLE public.profiles (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   username TEXT NOT NULL,
   avatar_url TEXT,
-  status TEXT DEFAULT 'Hey there! I am using Nicer.',
+  status TEXT DEFAULT 'Hey there! I am using Open Nicer. Let''s talk here!',
   is_online BOOLEAN NOT NULL DEFAULT true,
   last_seen TIMESTAMPTZ NOT NULL DEFAULT now(),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
