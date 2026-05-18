@@ -2,7 +2,7 @@
 
 **Open Nicer** is a beautiful, free, **open-source** instant messaging web app — no sign-up required. Open it on any device, get an instant identity, and start chatting in real time.
 
-> An open-source product from **[Nicle Inc.](https://allthingswebtech.com)** · Engineered by **[All Things Web Technology Inc.](https://allthingswebtech.com)**  
+> An open-source product from **[Nicle Inc.]((https://www.allthingswebtechnology.com/))** · Engineered by **[All Things Web Technology Inc.](https://allthingswebtech.com)**  
 > Released to the world by **Mr. Highness Chinedu** (also known as **Mr. Highness HC**)
 
 ---
