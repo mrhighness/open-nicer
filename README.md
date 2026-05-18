@@ -93,8 +93,8 @@ Copyright © Nicle Inc. and All Things Web Technology Inc.
 
 He released **Open Nicer** to the world as open-source software so developers and users everywhere can benefit from a production-quality messaging foundation.
 
-- **Website:** [allthingswebtech.com](https://allthingswebtech.com)  
-- **Email:** mivasiondb@gmail.com  
+- **Website:** [allthingswebtechnology.com](https://www.allthingswebtechnology.com/)  
+- **Email:** support@allthingswebtechnology.com  
 
 ---
 
